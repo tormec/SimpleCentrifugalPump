@@ -47,15 +47,15 @@ GAMMA = 5  # measured angle between cm2 and the vertical at blade edge [deg]
 Z = 7  # number of blades
 
 
-class Feasibility_Study(object):
+class Pre_Values(object):
     """Feasibility study for choosing the principal dimensions."""
 
     def __init__(self):
         self.fs_rpm = self.rotational_speed()
         self.fs_k_num = self.type_number(self.fs_rpm)
-        self.fs_u1 = Feasibility_Study.circumferential_velocity_1(self)
-        self.fs_d1 = self.diameter_1(self.fs_u1, self.fs_rpm)
-        self.fs_b1 = Feasibility_Study.width_1(self, self.fs_u1, self.fs_d1)
+        self.fs_u1 = Pre_Values.circumferential_velocity_1(self)
+        self.fs_d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)
+        self.fs_b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1)
         self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
         self.fs_npsh_r = self.npsh_r(self.fs_k_num)
 
@@ -156,11 +156,11 @@ class Feasibility_Study(object):
         return npsh_r
 
 
-class Project_Values(Feasibility_Study):
+class Project_Values(Pre_Values):
     """Project values chosen from the feasibility study."""
 
     def __init__(self):
-        Feasibility_Study.__init__(self)  # initialize base class's init()
+        Pre_Values.__init__(self)  # initialize base class's init()
 
         val = CPOLES.index(CPS)
         self.rpm = self.rotational_speed()[val]
@@ -168,9 +168,9 @@ class Project_Values(Feasibility_Study):
         self.phi = list(zip(FHT_2, FHT_4, FHT_6))[0][val]
         self.psi = list(zip(FHT_2, FHT_4, FHT_6))[1][val]
         self.eta_tot = list(zip(FHT_2, FHT_4, FHT_6))[2][val]
-        self.u1 = Feasibility_Study.circumferential_velocity_1(self)[val]
-        self.d1 = self.diameter_1(self.fs_u1, self.fs_rpm)[val]
-        self.b1 = Feasibility_Study.width_1(self, self.fs_u1, self.fs_d1)[val]
+        self.u1 = Pre_Values.circumferential_velocity_1(self)[val]
+        self.d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)[val]
+        self.b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1)[val]
         self.npsh_r = self.npsh_r(self.fs_npsh_r)[val]
 
 
@@ -244,32 +244,107 @@ class Impeller(Shaft):
     def __init__(self):
         Shaft.__init__(self)  # initialize base class's init()
 
-        self.u2 = self.circumferential_velocity_2(self.omega)
+        x0 = [1]
+        x1 = [1]
+        x2 = [1]
+        u1_sf = [0]
+        df_x0 = 1
+        df_x1 = 1
+        df_x2 = 1
+        df_u1_sf = 1
+        er = .001
+        while (df_x0 > er and df_x1 > er and df_x2 > er and df_u1_sf > er):
+            # calculate diameter at section 1
+            self.d1 = self.diameter_1(self.omega, self.u1)
+            # round diameter at section 1
+            self.d1 = round(self.d1 * 1000) / 1000
+            # calculate circumferential velocity at section 1
+            self.u1 = self.circumferential_velocity_1(self.omega, self.d1)
+            # calculate head coefficient
+            self.psi = self.head_coefficient(self.u1)
+            # calculate  impeller width at section 1
+            self.b1 = self.width_1(self.d1, self.u1, self.phi, x1[-1])
+            # round impeller width at section 1
+            self.b1 = round(self.b1 * 1000) / 1000
+            # calculate flow coefficient
+            self.phi = self.flow_coefficient(self.d1, self.b1, self.u1)
+            # calculate diameter at section 0 with min npsh_r
+            self.d0_npsh = self.diameter_0_npsh(self.omega, x0[-1])
+            # calculate diameter at section 0 with max tot efficency
+            self.d0_eff = self.diameter_0_efficency(self.omega, x0[-1])
+            # calculate diameter at section 0 as compromise solution
+            self.d0_cmp = self.diameter_0_compromise(self.omega, x0[-1])
+            # calculate diameter at section 0 as average of diameters
+            self.d0 = self.diameter_0(self.d0_npsh, self.d0_eff, self.d0_cmp)
+            # calculate hub blockage
+            x0.append(self.hub_blockage_0(self.d0, self.d_hu))
+            # calculate diameter mean streamline
+            self.d_mid = self.diameter_mean_streamline(self.d_hu, self.d0)
+            # calculate radius curvature front shroud
+            self.r_cvt = self.radius_curvature_front_shroud(self.d1)
+            # calculate center radius curvature front shroud
+            self.d_int = self.center_mean_streamline(self.r_cvt, self.d0)
+            # calculate radius mean streamline
+            self.r_mid = self.radius_mean_streamline(self.d_int, self.d_mid)
+            # calculate length mean streamline
+            self.l_mid = self.length_mean_streamline(self.r_mid, self.d_int,
+                                                     self.d1)
+            # calculate area at section 0
+            self.a0 = self.area_0(self.d_hu, self.d0)
+            # calculate area at section 1
+            self.a1 = self.area_1(self.d1, self.b1, x1[-1])
+            # calculate diameters at equals angles in the curved zone
+            self.b_vn = self.width_vane(self.r_mid, self.l_mid, self.d_int,
+                                        self.a0, self.a1)
+            # calculate angle between radius m. stream. and vert. at sec. 2
+            self.theta_2 = self.angle_theta_2(self.d_int, self.r_mid)
+            # calculate impeller width at section 2
+            self.b2 = self.width_2(self.a0, self.a1, self.r_mid, self.l_mid,
+                                   self.theta_2)
+            # calculate circumferential velocity at section 2
+            self.u2 = self.circumferential_velocity_2(self.omega)
+            # calculate meridional velocity at section 2
+            self.cm2 = self.meridional_velocity_2(self.b2, x2[-1])
+            # calculate blade working angle at section 2
+            self.beta_2c = self.angle_beta_2c(self.cm2, self.u2)
+            # calculate blade blockage at section 2
+            x2.append(self.blade_blockage_2(self.beta_2c))
+            # calculate relative velocity at section 2
+            self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
+            # calculate theoretic head coefficient
+            self.psi_th = self.theoretic_head_coefficient(self.psi)
+            # calculate theoretic flow coefficient
+            self.phi_th = self.theoretic_flow_coefficient(self.phi, x1[-1])
+            # calculate blade working angle at section 1
+            self.beta_1c = self.angle_beta_1c(self.psi_th, self.phi_th,
+                                              u1_sf[-1], self.u1)
+            # calculate slip factor at section 1
+            u1_sf.append(self.slip_factor(self.u1, self.beta_1c))
+            # calculate blade blockage at section 1
+            x1.append(self.blade_blockage_1(self.beta_1c, self.d1))
+            # calculate meridional velocity at section 1
+            self.cm1 = self.meridional_velocity_1(self.b1, self.d1, x1[-1])
+            # calculate relative velocity at section 1
+            self.w1 = self.relative_velocity_1(self.cm1, self.beta_1c)
+            # calculate degree of reaction
+            self.epsilon_r = self.degree_reaction(self.phi_th, self.beta_1c)
 
-        # initialize variables to be calculated inside loops
-        self.x0 = 1
-        self.x1 = 1
-        self.x2 = 1
-        self.psi_th = 0
-        self.d0_npsh = 0
-        self.d0_eff = 0
-        self.d0_cmp = 0
-        self.d0 = 0
-        self.d_mid = 0
-        self.r_cvt = 0
-        self.d_int = 0
-        self.r_mid = 0
-        self.l_mid = 0
-        self.a0 = 0
-        self.a1 = 0
-        self.cm2 = 0
-        self.b_vn = []
-        self.u1_sf = 0
-        self.beta_2c = 0
-        self.beta_1c = 0
-        self.epsilon_r = 0
+            if len(x0) > 1:
+                    df_x0 = x0[-1] - x0[-2]
+            if len(x1) > 1:
+                    df_x1 = x1[-1] - x1[-2]
+            if len(x2) > 1:
+                    df_x2 = x2[-1] - x2[-2]
+            if len(u1_sf) > 1:
+                    df_u1_sf = u1_sf[-1] - u1_sf[-2]
 
-        self.calc_impeller_val()  # calculate impeller values
+        self.x0 = x0[-1]
+        self.x1 = x1[-1]
+        self.x2 = x2[-1]
+        self.u1_sf = u1_sf[-1]
+
+        print(math.degrees(self.beta_2c))
+        print(math.degrees(self.beta_1c))
 
     def hub_blockage_0(self, d0, d_hu):
         """Calculate hub blockage at section 0.
@@ -303,6 +378,17 @@ class Impeller(Shaft):
 
         return x2
 
+    def diameter_1(self, omega, u1):
+        """Calculate diameter at section 1.
+
+        :param omega (float): angular velocity [rad/s]
+        :param u1 (float): circumferential velocity [m/s]
+        :return d1 (float): diameter [m]
+        """
+        d1 = 2 * u1 / omega
+
+        return d1
+
     def diameter_0_npsh(self, omega, x0):
         """Calculate diameter at section 0 with min npsh_r.
 
@@ -331,16 +417,17 @@ class Impeller(Shaft):
 
         return d0_eff
 
-    def diameter_0_compromise(self, omega):
+    def diameter_0_compromise(self, omega, x0):
         """Calculate diameter at section 0 as compromise solution between
         min npsh_r and max total efficency.
 
         :param omega (float): angular velocity [rad/s]
+        :param x0 (float): hub blockage
         :return d0_cmp (float): diameter as compromise solution [m]
         """
         d0_cmp = (
-                 (FLOW * 8) /
-                 (.33 * omega * math.pi * (1 - .33**2) * ETA_V)
+                 (FLOW * 8 * 3.03) /
+                 (omega * math.pi * x0 * ETA_V)
                  )**(1/3)
 
         return d0_cmp
@@ -632,9 +719,8 @@ class Impeller(Shaft):
 
         return psi_th
 
-    def flow_coefficient_corrected(self, phi, x1):
-        """Correct value of flow coefficient considering blade blockage
-        at section 1 and volumetric efficency.
+    def theoretic_flow_coefficient(self, phi, x1):
+        """Calculate theoretic flow coefficient at section 1.
 
         :param phi (float): flow coefficient
         :param x1 (float): blade blockage
@@ -667,145 +753,6 @@ class Impeller(Shaft):
 
         return epsilon_r
 
-    def calc_impeller_val(self):
-        """Calculate impeller values."""
-        # round diameter at section 1
-        self.d1 = round(self.d1 * 1000) / 1000
-        # calculate circumferential velocity at section 1
-        self.u1 = self.circumferential_velocity_1(self.omega, self.d1)
-        # calculate head coefficient
-        self.psi = self.head_coefficient(self.u1)
-        # calculate theoretic head coefficient
-        self.psi_th = self.theoretic_head_coefficient(self.psi)
-
-        # loop for calculate impeller width at section 1
-        b1 = []
-        dif = 1
-        err = .001
-        while dif > err:
-            b1.append(self.width_1(self.d1, self.u1, self.phi, self.x1))
-            # round impeller width at section 1
-            b1[-1] = round(b1[-1] * 1000) / 1000
-            # calculate flow coefficient
-            self.phi = self.flow_coefficient(self.d1, b1[-1], self.u1)
-
-            # loop for calculate diameter at section 0 with min npsh_r
-            d0_npsh = []
-            dif = 1
-            err = .001
-            while dif > err:
-                d0_npsh.append(self.diameter_0_npsh(self.omega, self.x0))
-                # calculate hub blockage using diameter with min npsh_r
-                self.x0 = self.hub_blockage_0(d0_npsh[-1], self.d_hu)
-                if len(d0_npsh) > 1:
-                    dif = d0_npsh[-1] - d0_npsh[-2]
-            self.d0_npsh = d0_npsh[-1]
-
-            # loop for calculate diameter at section 0 with max tot efficency
-            d0_eff = []
-            dif = 1
-            err = .001
-            while dif > err:
-                d0_eff.append(self.diameter_0_efficency(self.omega, self.x0))
-                # calculate hub blockage using diameter with max tot efficency
-                self.x0 = self.hub_blockage_0(d0_eff[-1], self.d_hu)
-                if len(d0_eff) > 1:
-                    dif = d0_eff[-1] - d0_eff[-2]
-            self.d0_eff = d0_eff[-1]
-
-            # calculate diameter at section 0 as compromise solution
-            self.d0_cmp = self.diameter_0_compromise(self.omega)
-
-            # calculate diameter at section 0 as average of diameters
-            self.d0 = self.diameter_0(self.d0_npsh, self.d0_eff, self.d0_cmp)
-
-            # calculate hub blockage using average diameter
-            self.x0 = self.hub_blockage_0(self.d0, self.d_hu)
-
-            # calculate area at section 0
-            self.a0 = self.area_0(self.d_hu, self.d0)
-
-            # calculate diameter mean streamline
-            self.d_mid = self.diameter_mean_streamline(self.d_hu, self.d0)
-
-            # calculate radius curvature front shroud
-            self.r_cvt = self.radius_curvature_front_shroud(self.d1)
-
-            # calculate center radius curvature front shroud
-            self.d_int = self.center_mean_streamline(self.r_cvt, self.d0)
-
-            # calculate radius mean streamline
-            self.r_mid = self.radius_mean_streamline(self.d_int, self.d_mid)
-
-            # calculate length mean streamline
-            self.l_mid = self.length_mean_streamline(self.r_mid, self.d_int,
-                                                     self.d1)
-
-            # loop for calculate area at section 1
-            a1 = []
-            dif = 1
-            err = .001
-            while dif > err:
-                a1.append(self.area_1(self.d1, b1[-1], self.x1))
-                # calculate diameters at equals angles in the curved zone
-                self.b_vn = self.width_vane(self.r_mid, self.l_mid, self.d_int,
-                                            self.a0, a1[-1])
-                # calculate angle between radius m. stream. and vert. at sec. 2
-                self.theta_2 = self.angle_theta_2(self.d_int, self.r_mid)
-                # calculate impeller width at section 2
-                self.b2 = self.width_2(self.a0, a1[-1], self.r_mid, self.l_mid,
-                                       self.theta_2)
-                # calculate meridional velocity at section 2
-                self.cm2 = self.meridional_velocity_2(self.b2, self.x2)
-
-                # loop for calculate blade working angle at section 2
-                beta_2c = []
-                dif = 1
-                err = .001
-                while dif > err:
-                    beta_2c.append(self.angle_beta_2c(self.cm2, self.u2))
-                    # calculate blade blockage at section 2
-                    self.x2 = self.blade_blockage_2(beta_2c[-1])
-                    # calculate meridional velocity at section 2
-                    self.cm2 = self.meridional_velocity_2(self.b2, self.x2)
-                    if len(beta_2c) > 1:
-                        dif = beta_2c[-1] - beta_2c[-2]
-                self.beta_2c = beta_2c[-1]
-
-                # loop for calculate blade working angle at section 1
-                beta_1c = []
-                dif = 1
-                err = .001
-                while dif > err:
-                    # correct flow coefficient
-                    self.phi_c = self.flow_coefficient_corrected(self.phi,
-                                                                 self.x1)
-                    beta_1c.append(self.angle_beta_1c(self.psi_th, self.phi_c,
-                                                      self.u1_sf, self.u1))
-                    # calculate blade blockage at section 1
-                    self.x1 = self.blade_blockage_1(beta_1c[-1], self.d1)
-                    # calculate slip factor at section 1
-                    self.u1_sf = self.slip_factor(self.u1, beta_1c[-1])
-                    if len(beta_1c) > 1:
-                        dif = beta_1c[-1] - beta_1c[-2]
-                self.beta_1c = beta_1c[-1]
-
-                if len(a1) > 1:
-                    dif = a1[-1] - a1[-2]
-
-            self.a1 = a1[-1]
-
-            if len(b1) > 1:
-                    dif = b1[-1] - b1[-2]
-
-        self.b1 = b1[-1]
-
-        # calculate degree of reaction
-        self.epsilon_r = self.degree_reaction(self.phi_c, self.beta_1c)
-
-        print(math.degrees(self.beta_2c))
-        print(math.degrees(self.beta_1c))
-
 
 def main():
     mp = Impeller()
@@ -825,7 +772,7 @@ def main():
                     t.append(round(j, 5))
             print(i[0], ' ', t)
         else:
-            print(i[0], ' ', i[1])
+            print(i[0], ' ', round(i[1], 5))
 
 
 if __name__ == '__main__':
