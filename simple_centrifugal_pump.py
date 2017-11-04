@@ -32,7 +32,7 @@ LM = 0.04  # loss coefficient at section 0
 LW = 0.50  # low-pressure peak coefficient at blades at section 0
 KM = 1.2  # relation between circumeferential velocity cm2 and c0
 ETA_V = 0.940  # volumetric efficency
-ETA_IDR = .87  # idraulic efficency
+ETA_IDR = .88  # idraulic efficency
 
 # internal diameters for commercial pipes
 D_INT = [.054, .070, .082, .107, .132, .159, .207, .260, .310, .340]  # [m]
