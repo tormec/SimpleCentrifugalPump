@@ -8,21 +8,12 @@ import math
 # 1: impeller blade trailing edge
 # 2: impeller blade leading edge
 
-# given data
-FLOW = 0.018  # flow rate [m^3/s]
-HEAD = 28  # head [m]
-
 # physical constants
 G = 9.81  # gravity acceleration [m/s^2]
 RHO = 1000  # water density
 
-# caracteristics of the electric motor
-CPOLES = [2, 4, 6]  # number of couple poles
-SLIP = 3  # slip for electric induction motor [%]
-HZ = 50  # frequency [Hz]
-
-# steel chosen for the pump shaft
-TAU = 30  # tau admissible for C40 steel [MPa]
+# internal diameters for commercial pipes
+D_INT = [.054, .070, .082, .107, .132, .159, .207, .260, .310, .340]  # [m]
 
 # blades
 S = .003  # width [m]
@@ -34,14 +25,7 @@ KM = 1.2  # relation between circumeferential velocity cm2 and c0
 ETA_V = 0.940  # volumetric efficency
 ETA_IDR = .88  # idraulic efficency
 
-# internal diameters for commercial pipes
-D_INT = [.054, .070, .082, .107, .132, .159, .207, .260, .310, .340]  # [m]
-
 # TO CHANGE
-FHT_2 = [.13, .50, .88]  # phi, psi, eta for el. motor with 2 couple poles
-FHT_4 = [.09, .55, .76]  # phi, psi, eta for el. motor with 4 couple poles
-FHT_6 = [.08, .69, .73]  # phi, psi, eta for el. motor with 6 couple poles
-CPS = 4  # chosen el. motor with 4 couple poles
 D2 = .112  # measured diameter [m]
 GAMMA = 5  # measured angle between cm2 and the vertical at blade edge [deg]
 Z = 7  # number of blades
@@ -50,50 +34,77 @@ Z = 7  # number of blades
 class Pre_Values(object):
     """Feasibility study for choosing the principal dimensions."""
 
-    def __init__(self):
-        self.fs_rpm = self.rotational_speed()
-        self.fs_k_num = self.type_number(self.fs_rpm)
-        self.fs_u1 = Pre_Values.circumferential_velocity_1(self)
-        self.fs_d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)
-        self.fs_b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1)
-        self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
-        self.fs_npsh_r = self.npsh_r(self.fs_k_num)
+    def __init__(self, **kwargs):
+        """Take input variables and execute feasibility study considering
+        electric motor with diff. couple poles.
 
-    def rotational_speed(self):
+        :param flow (float): flow rate [m^3/s]
+        :param head (float) head [m]
+        :param psi_coef (list): head coefficients
+        :param phi_coef (list): head coefficients
+        :param eta_coef (list): total efficency
+        :param slip (int): slip for electric induction motor [%]
+        :param hz (int):utility frequency [Hz]
+        """
+        self.flow = kwargs["flow"]
+        self.head = kwargs["head"]
+        self.fs_psi = kwargs["psi_coef"]
+        self.fs_phi = kwargs["phi_coef"]
+        self.fs_eta = kwargs["eta_coef"]
+        self.slip = kwargs["slip"]
+        self.hz = kwargs["hz"]
+        self.fs_cpoles = kwargs["cpoles"]
+
+        self.fs_rpm = self.rotational_speed(self.fs_cpoles, self.slip, self.hz)
+        self.fs_k_num = self.type_number(self.fs_rpm, self.flow, self.head)
+        self.fs_u1 = Pre_Values.circumferential_velocity_1(self, self.head,
+                                                           self.fs_psi)
+        self.fs_d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)
+        self.fs_b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
+                                        self.flow, self.fs_phi)
+        self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
+        self.fs_npsh_r = self.npsh_r(self.fs_k_num, self.head)
+
+    def rotational_speed(self, cpoles, slip, hz):
         """Calculate rotational speed at diff. couple poles.
 
+        :param cpoles (list): couple poles
+        :param slip (int): slip for electric induction motor [%]
+        :param hz (int):utility frequency [Hz]
         :return rpm (list): rotational speed [rpm]
         """
         rpm = []
-        for cp in CPOLES:
-            rpm.append(120 * HZ / cp * (1 - SLIP / 100))
+        for cp in cpoles:
+            rpm.append(120 * hz / cp * (1 - slip / 100))
 
         return rpm
 
-    def type_number(self, rpm):
+    def type_number(self, rpm, flow, head):
         """Calculate centrifugal pump's type number at diff. couple poles.
 
         :param rpm (list): rotational speed [rpm]
+        :param flow (float): flow rate [m^3/s]
+        :param head (float): head [m]
         :return k_num (list): type number
         """
         k_num = []
         for n in rpm:
             omega = 2 * math.pi * n / 60
-            k_num.append(omega * FLOW**0.5 / (G * HEAD)**0.75)
+            k_num.append(omega * flow**0.5 / (G * head)**0.75)
 
         return k_num
 
-    def circumferential_velocity_1(self):
+    def circumferential_velocity_1(self, head, psi_coef):
         """Calculate circumferential velocity at section 1
         at diff. couple poles.
 
+        :param head (float): head [m]
+        :param psi_coef (list): head coefficients
         :return u1 (list): circumferential velocity [m/s]
         """
         u1 = []
-        zipped = list(zip(FHT_2, FHT_4, FHT_6))
-        head_coef = zipped[1]
-        for psi in head_coef:
-            u1.append((G * HEAD / psi)**0.5)
+        for psi in psi_coef:
+            u1.append((G * head / psi)**0.5)
 
         return u1
 
@@ -111,19 +122,19 @@ class Pre_Values(object):
 
         return d1
 
-    def width_1(self, u1, d1):
+    def width_1(self, u1, d1, flow, phi_coef):
         """Calculate impeller width at section 1 at diff. couple poles.
 
         :param u1 (list): circumferential velocity [m/s]
         :param d1 (list): diameter [m]
+        :param flow (float): flow rate [m^3/s]
+        :param phi_coef (list): flow coefficients
         :return b1 (list): impeller width [m]
         """
         b1 = []
-        zipped = list(zip(FHT_2, FHT_4, FHT_6))
-        flow_coef = zipped[0]
-        zipped = zip(u1, d1, flow_coef)
+        zipped = zip(u1, d1, phi_coef)
         for u, d, phi in zipped:
-            b1.append(FLOW / (math.pi * d * u * phi))
+            b1.append(flow / (math.pi * d * u * phi))
 
         return b1
 
@@ -142,16 +153,17 @@ class Pre_Values(object):
 
         return bd1
 
-    def npsh_r(self, k_num):
+    def npsh_r(self, k_num, head):
         """Calculate the neat positive suction head required
         at diff. couple poles.
 
         :param k_num (list): type number
+        :param head (float): head [m]
         :return npsh_r (list): neat positive suction head required [m]
         """
         npsh_r = []
         for k in k_num:
-            npsh_r.append(.25 * k**(4/3) * HEAD)
+            npsh_r.append(.25 * k**(4/3) * head)
 
         return npsh_r
 
@@ -159,31 +171,46 @@ class Pre_Values(object):
 class Project_Values(Pre_Values):
     """Project values chosen from the feasibility study."""
 
-    def __init__(self):
-        Pre_Values.__init__(self)  # initialize base class's init()
+    def __init__(self, **kwargs):
+        """ Extract the values for the chosen solution.
 
-        val = CPOLES.index(CPS)
-        self.rpm = self.rotational_speed()[val]
-        self.k_num = self.type_number(self.fs_rpm)[val]
-        self.phi = list(zip(FHT_2, FHT_4, FHT_6))[0][val]
-        self.psi = list(zip(FHT_2, FHT_4, FHT_6))[1][val]
-        self.eta_tot = list(zip(FHT_2, FHT_4, FHT_6))[2][val]
-        self.u1 = Pre_Values.circumferential_velocity_1(self)[val]
+        :param cps (int): the chosen couple poles for electric motor
+        """
+        Pre_Values.__init__(self, **kwargs)
+
+        self.cps = kwargs['cps']
+
+        val = self.fs_cpoles.index(self.cps)
+        self.rpm = self.rotational_speed(self.fs_cpoles, self.slip,
+                                         self.hz)[val]
+        self.k_num = self.type_number(self.fs_rpm, self.flow, self.head)[val]
+        self.phi = self.fs_phi[val]
+        self.psi = self.fs_psi[val]
+        self.eta_tot = self.fs_eta[val]
+        self.u1 = Pre_Values.circumferential_velocity_1(self, self.head,
+                                                        self.fs_psi)[val]
         self.d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)[val]
-        self.b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1)[val]
-        self.npsh_r = self.npsh_r(self.fs_npsh_r)[val]
+        self.b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
+                                     self.flow, self.fs_phi)[val]
+        self.npsh_r = self.npsh_r(self.fs_npsh_r, self.head)[val]
 
 
 class Shaft(Project_Values):
     """Dimensioning pump shaft."""
 
-    def __init__(self):
-        Project_Values.__init__(self)  # initialize base class's init()
+    def __init__(self, **kwargs):
+        """For a given material, dimension the pump shaft.
+
+        :param tau (int): tau admissible [MPa]
+        """
+        Project_Values.__init__(self, **kwargs)
+
+        self.tau = kwargs['tau']
 
         self.omega = self.angular_velocity(self.rpm)
-        self.powr = self.power(self.eta_tot)
+        self.powr = self.power(self.eta_tot, self.flow, self.head)
         self.torq = self.torque(self.powr, self.omega)
-        self.d_sh = self.diameter_shaft(self.torq)
+        self.d_sh = self.diameter_shaft(self.torq, self.tau)
         self.d_hu = self.diameter_hub(self.d_sh)
 
     def angular_velocity(self, rpm):
@@ -196,13 +223,15 @@ class Shaft(Project_Values):
 
         return omega
 
-    def power(self, eta_tot):
+    def power(self, eta_tot, flow, head):
         """Calculate power the el. motor should provide at pump shaft.
 
         :param eta_t (float): total efficency
+        :param flow (float): flow rate [m^3/s]
+        :param head (float): head [m]
         :return powr (float): power [W]
         """
-        powr = (RHO * FLOW * G * HEAD) / eta_tot
+        powr = (RHO * flow * G * head) / eta_tot
 
         return powr
 
@@ -217,13 +246,14 @@ class Shaft(Project_Values):
 
         return torq
 
-    def diameter_shaft(self, torq):
+    def diameter_shaft(self, torq, tau):
         """Calculate shaft diameter.
 
         :param torq (float): torque [Nm]
-        return d_sh (float): shaft diameter [m]
+        :param tau (int): tau admissible [MPa]
+        :return d_sh (float): shaft diameter [m]
         """
-        d_sh = ((32 * torq) / (math.pi * (TAU * 10**6)))**(1/3)
+        d_sh = ((32 * torq) / (math.pi * (tau * 10**6)))**(1/3)
 
         return d_sh
 
@@ -241,8 +271,8 @@ class Shaft(Project_Values):
 class Impeller(Shaft):
     """Dimensioning impeller."""
 
-    def __init__(self):
-        Shaft.__init__(self)  # initialize base class's init()
+    def __init__(self, **kwargs):
+        Shaft.__init__(self, **kwargs)
 
         dif = 1
         err = .001
@@ -254,15 +284,17 @@ class Impeller(Shaft):
             dif = abs(u1[-1] - u1[-2])
         self.u1 = u1[-1]
 
-        self.psi = self.head_coefficient(self.u1)
+        self.psi = self.head_coefficient(self.u1, self.head)
 
         dif = 1
         err = .001
         x0 = [1]
         while dif > err:
-            self.d0_npsh = self.diameter_0_npsh(self.omega, x0[-1])
-            self.d0_eff = self.diameter_0_efficency(self.omega, x0[-1])
-            self.d0_cmp = self.diameter_0_compromise(self.omega, x0[-1])
+            self.d0_npsh = self.diameter_0_npsh(self.omega, x0[-1], self.flow)
+            self.d0_eff = self.diameter_0_efficency(self.omega, x0[-1],
+                                                    self.flow)
+            self.d0_cmp = self.diameter_0_compromise(self.omega, x0[-1],
+                                                     self.flow)
             self.d0 = self.diameter_0(self.d0_npsh, self.d0_eff, self.d0_cmp)
             x0.append(self.hub_blockage_0(self.d0, self.d_hu))
             if len(x0) > 2:
@@ -282,10 +314,11 @@ class Impeller(Shaft):
         x1 = [1]
         self.u1_sf = 0  # initialization
         while dif > err:
-            self.b1 = self.width_1(self.d1, self.u1, self.phi, x1[-1])
+            self.b1 = self.width_1(self.d1, self.u1, self.phi, x1[-1],
+                                   self.flow)
             self.b1 = round(self.b1 * 1000) / 1000
             self.phi = self.flow_coefficient(self.d1, self.b1, self.u1,
-                                             x1[-1])
+                                             x1[-1], self.flow)
             self.a1 = self.area_1(self.d1, self.b1, x1[-1])
             self.b_vn = self.width_vane(self.r_mid, self.l_mid, self.d_int,
                                         self.a0, self.a1)
@@ -296,7 +329,8 @@ class Impeller(Shaft):
             self.epsilon_r = self.degree_reaction(self.phi_th, self.beta_1c)
             self.u1_sf = self.slip_factor(self.u1, self.beta_1c)
             x1.append(self.blade_blockage_1(self.beta_1c, self.d1))
-            self.cm1 = self.meridional_velocity_1(self.b1, self.d1, x1[-1])
+            self.cm1 = self.meridional_velocity_1(self.b1, self.d1, x1[-1],
+                                                  self.flow)
             self.w1 = self.relative_velocity_1(self.cm1, self.beta_1c)
             if len(x1) > 2:
                 dif = abs(x1[-1] - x1[-2])
@@ -310,7 +344,7 @@ class Impeller(Shaft):
             self.b2 = self.width_2(self.a0, self.a1, self.r_mid, self.l_mid,
                                    self.theta_2)
             self.u2 = self.circumferential_velocity_2(self.omega)
-            self.cm2 = self.meridional_velocity_2(self.b2, x2[-1])
+            self.cm2 = self.meridional_velocity_2(self.b2, x2[-1], self.flow)
             self.beta_2c = self.angle_beta_2c(self.cm2, self.u2)
             self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
             x2.append(self.blade_blockage_2(self.beta_2c))
@@ -364,44 +398,47 @@ class Impeller(Shaft):
 
         return d1
 
-    def diameter_0_npsh(self, omega, x0):
+    def diameter_0_npsh(self, omega, x0, flow):
         """Calculate diameter at section 0 with min npsh_r.
 
         :param omega (float): angular velocity [rad/s]
         :param x0 (float): hub blockage
+        :param flow (float): flow rate [m^3/s]
         :return d0_npsh (float): diameter with min npsh_r [m]
         """
         d0_npsh = 2 * (
-                       (2 * FLOW**2 * KM**2 * (1 + LM + LW)) /
+                       (2 * flow**2 * KM**2 * (1 + LM + LW)) /
                        (ETA_V**2 * math.pi**2 * omega**2 * x0**2 * LW)
                       )**(1/6)
 
         return d0_npsh
 
-    def diameter_0_efficency(self, omega, x0):
+    def diameter_0_efficency(self, omega, x0, flow):
         """Calculate diameter at section 0 with max total efficency.
 
         :param omega (float): angular velocity [rad/s]
         :param x0 (float): hub blockage
+        :param flow (float): flow rate [m^3/s]
         :return d0_eff (float): diameter with max efficency [m]
         """
         d0_eff = 2 * (
-                      (2 * FLOW**2 * KM**2) /
+                      (2 * flow**2 * KM**2) /
                       (ETA_V**2 * math.pi**2 * omega**2 * x0**2)
                      )**(1/6)
 
         return d0_eff
 
-    def diameter_0_compromise(self, omega, x0):
+    def diameter_0_compromise(self, omega, x0, flow):
         """Calculate diameter at section 0 as compromise solution between
         min npsh_r and max total efficency.
 
         :param omega (float): angular velocity [rad/s]
         :param x0 (float): hub blockage
+        :param flow (float): flow rate [m^3/s]
         :return d0_cmp (float): diameter as compromise solution [m]
         """
         d0_cmp = (
-                 (FLOW * 8 * 3.03) /
+                 (flow * 8 * 3.03) /
                  (omega * math.pi * x0 * ETA_V)
                  )**(1/3)
 
@@ -483,15 +520,16 @@ class Impeller(Shaft):
 
         return b2
 
-    def width_1(self, d1, u1, phi, x1):
+    def width_1(self, d1, u1, phi, x1, flow):
         """Calculate impeller width at section 1.
 
         :param d1 (float): diameter [m]
         :param u1 (float): circumferential velocity [m/s]
         :param phi (float): flow coefficient
-        :x1 (float): blade blockage
+        :param flow (float): flow rate [m^3/s]
+        :return x1 (float): blade blockage
         """
-        b1 = FLOW / (math.pi * d1 * u1 * phi * x1 * ETA_V)
+        b1 = flow / (math.pi * d1 * u1 * phi * x1 * ETA_V)
 
         return b1
 
@@ -569,26 +607,28 @@ class Impeller(Shaft):
 
         return list(zip(theta, length, b_vn, area))
 
-    def meridional_velocity_2(self, b2, x2):
+    def meridional_velocity_2(self, b2, x2, flow):
         """Calculate meridional velocity at section 2.
 
         :param b2 (float): impeller width [m]
         :param x2 (float): blade blockage
+        :param flow (float): flow rate [m^3/s]
         :return cm2 (float): meridional velocity [m/s]
         """
-        cm2 = FLOW / (math.pi * D2 * b2 * x2 * ETA_V)
+        cm2 = flow / (math.pi * D2 * b2 * x2 * ETA_V)
 
         return cm2
 
-    def meridional_velocity_1(self, b1, d1, x1):
+    def meridional_velocity_1(self, b1, d1, x1, flow):
         """Calculate meridional velocity at section 1.
 
         :param b1 (float): impeller width [m]
         :param d1 (float): diameter [m]
         :param x1 (float): blade blockage
+        :param flow (float): flow rate [m^3/s]
         :return cm1 (float): meridional velocity [m/s]
         """
-        cm1 = FLOW / (math.pi * d1 * b1 * x1 * ETA_V)
+        cm1 = flow / (math.pi * d1 * b1 * x1 * ETA_V)
 
         return cm1
 
@@ -662,26 +702,28 @@ class Impeller(Shaft):
 
         return beta_1c
 
-    def head_coefficient(self, u1):
+    def head_coefficient(self, u1, head):
         """Calculate head coefficient at section 1.
 
-        : param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): circumferential velocity [m/s]
+        :param head (float): head [m]
         :return psi (float): head coefficient
         """
-        psi = (G * HEAD) / u1**2
+        psi = (G * head) / u1**2
 
         return psi
 
-    def flow_coefficient(self, d1, b1, u1, x1):
+    def flow_coefficient(self, d1, b1, u1, x1, flow):
         """Calculate flow coefficient at section 1.
 
         :param d1 (float): diameter [m]
         :param b1 (float): impeller width [m]
         :param u1 (float): circumferential velocity [m/s]
         :param x1 (float): blade blockage
+        :param flow (float): flow rate [m^3/s]
         :return phi (float): flow coefficient
         """
-        phi = FLOW / (math.pi * d1 * b1 * u1 * x1 * ETA_V)
+        phi = flow / (math.pi * d1 * b1 * u1 * x1 * ETA_V)
 
         return phi
 
@@ -730,8 +772,8 @@ class Impeller(Shaft):
         return epsilon_r
 
 
-def main():
-    mp = Impeller()
+def main(**kwargs):
+    mp = Impeller(**kwargs)
 
     for k, v in sorted(list(globals().items())):
         if type(v) in (float, int, list):
@@ -752,4 +794,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(flow=0.018, head=28,
+         cpoles=[2, 4, 6, 8],  # couple ploes
+         slip=3, hz=50,  # slip and utility frequency for electric motor
+         psi_coef=[.50, .55, .69],  # head coef. for diff. couple poles
+         phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
+         eta_coef=[.88, .76, .73],  # efficency for diff. couple poles
+         cps=4,  # the chosen couple poles for electric motor
+         tau=30)  # tau admissible for C40 steel [MPa]
