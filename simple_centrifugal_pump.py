@@ -50,7 +50,7 @@ class Pre_Values(object):
 
         return k_num
 
-    def circumferential_velocity_1(self, head, psi_coef):
+    def _circumferential_velocity_1(self, head, psi_coef):
         """Calculate circumferential velocity at section 1
         at diff. couple poles.
 
@@ -64,7 +64,7 @@ class Pre_Values(object):
 
         return u1
 
-    def diameter_1(self, u1, rpm):
+    def _diameter_1(self, u1, rpm):
         """Calculate diameter at section 1 at diff. couple poles.
 
         :param u1 (list): circumferential velocity [m/s]
@@ -78,7 +78,7 @@ class Pre_Values(object):
 
         return d1
 
-    def width_1(self, u1, d1, flow, phi_coef):
+    def _width_1(self, u1, d1, flow, phi_coef):
         """Calculate impeller width at section 1 at diff. couple poles.
 
         :param u1 (list): circumferential velocity [m/s]
@@ -124,7 +124,7 @@ class Pre_Values(object):
         return npsh_r
 
 
-class Shaft(Pre_Values):
+class Shaft(object):
     """Methods for pump shaft design."""
 
     def angular_velocity(self, rpm):
@@ -182,7 +182,7 @@ class Shaft(Pre_Values):
         return d_hu
 
 
-class Impeller(Shaft):
+class Impeller(object):
     """Methods for impeller design."""
 
     def hub_blockage_0(self, d0, d_hu):
@@ -628,7 +628,7 @@ class Impeller(Shaft):
         return epsilon_r
 
 
-class Test(Impeller):
+class Test(Pre_Values, Shaft, Impeller):
     """Test methods."""
 
     def __init__(self, **kwargs):
@@ -675,11 +675,10 @@ class Test(Impeller):
         # feasability study
         self.fs_rpm = self.rotational_speed(self.slip, self.hz)
         self.fs_k_num = self.type_number(self.fs_rpm, self.flow, self.head)
-        self.fs_u1 = Pre_Values.circumferential_velocity_1(self, self.head,
-                                                           self.fs_psi)
-        self.fs_d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)
-        self.fs_b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
-                                        self.flow, self.fs_phi)
+        self.fs_u1 = self._circumferential_velocity_1(self.head, self.fs_psi)
+        self.fs_d1 = self._diameter_1(self.fs_u1, self.fs_rpm)
+        self.fs_b1 = self._width_1(self.fs_u1, self.fs_d1, self.flow,
+                                   self.fs_phi)
         self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
         self.fs_npsh_r = self.npsh_r(self.fs_k_num, self.head)
 
@@ -690,11 +689,10 @@ class Test(Impeller):
         self.phi = self.fs_phi[val]
         self.psi = self.fs_psi[val]
         self.eta_tot = self.fs_eta[val]
-        self.u1 = Pre_Values.circumferential_velocity_1(self, self.head,
-                                                        self.fs_psi)[val]
-        self.d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)[val]
-        self.b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
-                                     self.flow, self.fs_phi)[val]
+        self.u1 = self._circumferential_velocity_1(self.head, self.fs_psi)[val]
+        self.d1 = self._diameter_1(self.fs_u1, self.fs_rpm)[val]
+        self.b1 = self._width_1(self.fs_u1, self.fs_d1, self.flow,
+                                self.fs_phi)[val]
         self.npsh_r = self.npsh_r(self.fs_npsh_r, self.head)[val]
 
         # pump shaft design
