@@ -20,37 +20,7 @@ D_INT = [.054, .070, .082, .107, .132, .159, .207, .260, .310, .340]  # [m]
 
 
 class Pre_Values(object):
-    """Feasibility study for choosing the principal dimensions."""
-
-    def __init__(self, **kwargs):
-        """Take input variables and execute feasibility study considering
-        electric motor with diff. couple poles.
-
-        :param flow (float): flow rate [m^3/s]
-        :param head (float) head [m]
-        :param psi_coef (list): head coefficients
-        :param phi_coef (list): head coefficients
-        :param eta_coef (list): total efficency
-        :param slip (int): slip for electric induction motor [%]
-        :param hz (int):utility frequency [Hz]
-        """
-        self.flow = kwargs["flow"]
-        self.head = kwargs["head"]
-        self.fs_psi = kwargs["psi_coef"]
-        self.fs_phi = kwargs["phi_coef"]
-        self.fs_eta = kwargs["eta_coef"]
-        self.slip = kwargs["slip"]
-        self.hz = kwargs["hz"]
-
-        self.fs_rpm = self.rotational_speed(self.slip, self.hz)
-        self.fs_k_num = self.type_number(self.fs_rpm, self.flow, self.head)
-        self.fs_u1 = Pre_Values.circumferential_velocity_1(self, self.head,
-                                                           self.fs_psi)
-        self.fs_d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)
-        self.fs_b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
-                                        self.flow, self.fs_phi)
-        self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
-        self.fs_npsh_r = self.npsh_r(self.fs_k_num, self.head)
+    """Methods for feasability study of the impeller."""
 
     def rotational_speed(self, slip, hz):
         """Calculate rotational speed at diff. couple poles.
@@ -154,49 +124,8 @@ class Pre_Values(object):
         return npsh_r
 
 
-class Project_Values(Pre_Values):
-    """Project values chosen from the feasibility study."""
-
-    def __init__(self, **kwargs):
-        """ Extract the values for the chosen solution.
-
-        :param cps (int): the chosen couple poles for electric motor
-        """
-        Pre_Values.__init__(self, **kwargs)
-
-        self.cps = kwargs['cps']
-
-        val = CPOLES.index(self.cps)
-        self.rpm = self.rotational_speed(self.slip, self.hz)[val]
-        self.k_num = self.type_number(self.fs_rpm, self.flow, self.head)[val]
-        self.phi = self.fs_phi[val]
-        self.psi = self.fs_psi[val]
-        self.eta_tot = self.fs_eta[val]
-        self.u1 = Pre_Values.circumferential_velocity_1(self, self.head,
-                                                        self.fs_psi)[val]
-        self.d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)[val]
-        self.b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
-                                     self.flow, self.fs_phi)[val]
-        self.npsh_r = self.npsh_r(self.fs_npsh_r, self.head)[val]
-
-
-class Shaft(Project_Values):
-    """Dimensioning pump shaft."""
-
-    def __init__(self, **kwargs):
-        """For a given material, dimension the pump shaft.
-
-        :param tau (int): tau admissible [MPa]
-        """
-        Project_Values.__init__(self, **kwargs)
-
-        self.tau = kwargs['tau']
-
-        self.omega = self.angular_velocity(self.rpm)
-        self.powr = self.power(self.eta_tot, self.flow, self.head)
-        self.torq = self.torque(self.powr, self.omega)
-        self.d_sh = self.diameter_shaft(self.torq, self.tau)
-        self.d_hu = self.diameter_hub(self.d_sh)
+class Shaft(Pre_Values):
+    """Methods for pump shaft design."""
 
     def angular_velocity(self, rpm):
         """Calculate angular velocity pump shaft.
@@ -254,121 +183,7 @@ class Shaft(Project_Values):
 
 
 class Impeller(Shaft):
-    """Dimensioning impeller."""
-
-    def __init__(self, **kwargs):
-        """
-        :param thk (float): blade thickness [m]
-        :param lm (float): loss coefficient at section 0
-        :param lw (float): low-pressure peak coefficient at blades at section 0
-        :param km (float): rate between circumeferential velocity cm2 and c0
-        :param eta_vol (float): volumetric efficency
-        :param eta_idr (float): idraulic efficency
-        :param d2 (float): measured diameter
-        :param gamma (int): measured ang. between cm2 and vert. at sec. 2 [deg]
-        :param z (int): number of blades
-        """
-        Shaft.__init__(self, **kwargs)
-
-        self.thk = kwargs["thk"]
-        self.lm = kwargs["lm"]
-        self.lw = kwargs["lw"]
-        self.km = kwargs["km"]
-        self.eta_vol = kwargs["eta_vol"]
-        self.eta_idr = kwargs["eta_idr"]
-        self.d2 = kwargs["d2"]
-        self.gamma = kwargs["gamma"]
-        self.z = kwargs["z"]
-
-        dif = 1
-        err = .001
-        u1 = [self.u1]
-        while dif > err:
-            self.d1 = self.diameter_1(self.omega, u1[-1])
-            self.d1 = round(self.d1 * 1000) / 1000
-            u1.append(self.circumferential_velocity_1(self.omega, self.d1))
-            dif = abs(u1[-1] - u1[-2])
-        self.u1 = u1[-1]
-
-        self.psi = self.head_coefficient(self.u1, self.head)
-
-        dif = 1
-        err = .001
-        x0 = [1]
-        while dif > err:
-            self.d0_npsh = self.diameter_0_npsh(self.omega, x0[-1], self.flow,
-                                                self.lm, self.lw, self.km,
-                                                self.eta_vol)
-            self.d0_eff = self.diameter_0_efficency(self.omega, x0[-1],
-                                                    self.flow, self.km,
-                                                    self.eta_vol)
-            self.d0_cmp = self.diameter_0_compromise(self.omega, x0[-1],
-                                                     self.flow, self.eta_vol)
-            self.d0 = self.diameter_0(self.d0_npsh, self.d0_eff, self.d0_cmp)
-            x0.append(self.hub_blockage_0(self.d0, self.d_hu))
-            if len(x0) > 2:
-                dif = abs(x0[-1] - x0[-2])
-        self.x0 = x0[-1]
-
-        self.d_mid = self.diameter_mean_streamline(self.d_hu, self.d0)
-        self.r_cvt = self.radius_curvature_front_shroud(self.d1)
-        self.d_int = self.center_mean_streamline(self.r_cvt, self.d0)
-        self.r_mid = self.radius_mean_streamline(self.d_int, self.d_mid)
-        self.l_mid = self.length_mean_streamline(self.r_mid, self.d_int,
-                                                 self.d1)
-        self.a0 = self.area_0(self.d_hu, self.d0)
-
-        dif = 1
-        err = .001
-        x1 = [1]
-        self.u1_sf = 0  # initialization
-        while dif > err:
-            self.b1 = self.width_1(self.d1, self.u1, self.phi, x1[-1],
-                                   self.flow, self.eta_vol)
-            self.b1 = round(self.b1 * 1000) / 1000
-            self.phi = self.flow_coefficient(self.d1, self.b1, self.u1,
-                                             x1[-1], self.flow, self.eta_vol)
-            self.a1 = self.area_1(self.d1, self.b1, x1[-1])
-            self.b_vn = self.width_vane(self.r_mid, self.l_mid, self.d_int,
-                                        self.a0, self.a1)
-            self.psi_th = self.theoretic_head_coefficient(self.psi,
-                                                          self.eta_idr)
-            self.phi_th = self.theoretic_flow_coefficient(self.phi, x1[-1],
-                                                          self.eta_vol)
-            self.beta_1c = self.angle_beta_1c(self.psi_th, self.phi_th,
-                                              self.u1_sf, self.u1)
-            self.epsilon_r = self.degree_reaction(self.phi_th, self.beta_1c,
-                                                  self.z)
-            self.u1_sf = self.slip_factor(self.u1, self.beta_1c, self.z)
-            x1.append(self.blade_blockage_1(self.beta_1c, self.d1, self.thk,
-                                            self.z))
-            self.cm1 = self.meridional_velocity_1(self.b1, self.d1, x1[-1],
-                                                  self.flow, self.eta_vol)
-            self.w1 = self.relative_velocity_1(self.cm1, self.beta_1c)
-            if len(x1) > 2:
-                dif = abs(x1[-1] - x1[-2])
-        self.x1 = x1[-1]
-
-        dif = 1
-        err = .001
-        x2 = [1]
-        while dif > err:
-            self.theta_2 = self.angle_theta_2(self.d_int, self.r_mid, self.d2)
-            self.b2 = self.width_2(self.a0, self.a1, self.r_mid, self.l_mid,
-                                   self.theta_2, self.d2)
-            self.u2 = self.circumferential_velocity_2(self.omega, self.d2)
-            self.cm2 = self.meridional_velocity_2(self.b2, x2[-1], self.flow,
-                                                  self.eta_vol, self.d2)
-            self.beta_2c = self.angle_beta_2c(self.cm2, self.u2, self.gamma)
-            self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
-            x2.append(self.blade_blockage_2(self.beta_2c, self.thk, self.z,
-                                            self.d2))
-            if len(x2) > 2:
-                dif = abs(x2[-1] - x2[-2])
-        self.x2 = x2[-1]
-
-        print(math.degrees(self.beta_2c))
-        print(math.degrees(self.beta_1c))
+    """Methods for impeller design."""
 
     def hub_blockage_0(self, d0, d_hu):
         """Calculate hub blockage at section 0.
@@ -813,15 +628,183 @@ class Impeller(Shaft):
         return epsilon_r
 
 
+class Test(Impeller):
+    """Test methods."""
+
+    def __init__(self, **kwargs):
+        """Take input variables and execute test.
+
+        :param flow (float): flow rate [m^3/s]
+        :param head (float) head [m]
+        :param psi_coef (list): head coefficients
+        :param phi_coef (list): head coefficients
+        :param eta_coef (list): total efficency
+        :param slip (int): slip for electric induction motor [%]
+        :param hz (int):utility frequency [Hz]
+        :param cps (int): the chosen couple poles for electric motor
+        :param tau (int): tau admissible [MPa]
+        :param thk (float): blade thickness [m]
+        :param lm (float): loss coefficient at section 0
+        :param lw (float): low-pressure peak coefficient at blades at section 0
+        :param km (float): rate between circumeferential velocity cm2 and c0
+        :param eta_vol (float): volumetric efficency
+        :param eta_idr (float): idraulic efficency
+        :param d2 (float): measured diameter
+        :param gamma (int): measured ang. between cm2 and vert. at sec. 2 [deg]
+        :param z (int): number of blades
+        """
+        self.flow = kwargs["flow"]
+        self.head = kwargs["head"]
+        self.fs_psi = kwargs["psi_coef"]
+        self.fs_phi = kwargs["phi_coef"]
+        self.fs_eta = kwargs["eta_coef"]
+        self.slip = kwargs["slip"]
+        self.hz = kwargs["hz"]
+        self.cps = kwargs["cps"]
+        self.tau = kwargs["tau"]
+        self.thk = kwargs["thk"]
+        self.lm = kwargs["lm"]
+        self.lw = kwargs["lw"]
+        self.km = kwargs["km"]
+        self.eta_vol = kwargs["eta_vol"]
+        self.eta_idr = kwargs["eta_idr"]
+        self.d2 = kwargs["d2"]
+        self.gamma = kwargs["gamma"]
+        self.z = kwargs["z"]
+
+        # feasability study
+        self.fs_rpm = self.rotational_speed(self.slip, self.hz)
+        self.fs_k_num = self.type_number(self.fs_rpm, self.flow, self.head)
+        self.fs_u1 = Pre_Values.circumferential_velocity_1(self, self.head,
+                                                           self.fs_psi)
+        self.fs_d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)
+        self.fs_b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
+                                        self.flow, self.fs_phi)
+        self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
+        self.fs_npsh_r = self.npsh_r(self.fs_k_num, self.head)
+
+        # project values
+        val = CPOLES.index(self.cps)
+        self.rpm = self.rotational_speed(self.slip, self.hz)[val]
+        self.k_num = self.type_number(self.fs_rpm, self.flow, self.head)[val]
+        self.phi = self.fs_phi[val]
+        self.psi = self.fs_psi[val]
+        self.eta_tot = self.fs_eta[val]
+        self.u1 = Pre_Values.circumferential_velocity_1(self, self.head,
+                                                        self.fs_psi)[val]
+        self.d1 = Pre_Values.diameter_1(self, self.fs_u1, self.fs_rpm)[val]
+        self.b1 = Pre_Values.width_1(self, self.fs_u1, self.fs_d1,
+                                     self.flow, self.fs_phi)[val]
+        self.npsh_r = self.npsh_r(self.fs_npsh_r, self.head)[val]
+
+        # pump shaft design
+        self.omega = self.angular_velocity(self.rpm)
+        self.powr = self.power(self.eta_tot, self.flow, self.head)
+        self.torq = self.torque(self.powr, self.omega)
+        self.d_sh = self.diameter_shaft(self.torq, self.tau)
+        self.d_hu = self.diameter_hub(self.d_sh)
+
+        # impeller design
+        dif = 1
+        err = .001
+        u1 = [self.u1]
+        while dif > err:
+            self.d1 = self.diameter_1(self.omega, u1[-1])
+            self.d1 = round(self.d1 * 1000) / 1000
+            u1.append(self.circumferential_velocity_1(self.omega, self.d1))
+            dif = abs(u1[-1] - u1[-2])
+        self.u1 = u1[-1]
+
+        self.psi = self.head_coefficient(self.u1, self.head)
+
+        dif = 1
+        err = .001
+        x0 = [1]
+        while dif > err:
+            self.d0_npsh = self.diameter_0_npsh(self.omega, x0[-1], self.flow,
+                                                self.lm, self.lw, self.km,
+                                                self.eta_vol)
+            self.d0_eff = self.diameter_0_efficency(self.omega, x0[-1],
+                                                    self.flow, self.km,
+                                                    self.eta_vol)
+            self.d0_cmp = self.diameter_0_compromise(self.omega, x0[-1],
+                                                     self.flow, self.eta_vol)
+            self.d0 = self.diameter_0(self.d0_npsh, self.d0_eff, self.d0_cmp)
+            x0.append(self.hub_blockage_0(self.d0, self.d_hu))
+            if len(x0) > 2:
+                dif = abs(x0[-1] - x0[-2])
+        self.x0 = x0[-1]
+
+        self.d_mid = self.diameter_mean_streamline(self.d_hu, self.d0)
+        self.r_cvt = self.radius_curvature_front_shroud(self.d1)
+        self.d_int = self.center_mean_streamline(self.r_cvt, self.d0)
+        self.r_mid = self.radius_mean_streamline(self.d_int, self.d_mid)
+        self.l_mid = self.length_mean_streamline(self.r_mid, self.d_int,
+                                                 self.d1)
+        self.a0 = self.area_0(self.d_hu, self.d0)
+
+        dif = 1
+        err = .001
+        x1 = [1]
+        self.u1_sf = 0  # initialization
+        while dif > err:
+            self.b1 = self.width_1(self.d1, self.u1, self.phi, x1[-1],
+                                   self.flow, self.eta_vol)
+            self.b1 = round(self.b1 * 1000) / 1000
+            self.phi = self.flow_coefficient(self.d1, self.b1, self.u1,
+                                             x1[-1], self.flow, self.eta_vol)
+            self.a1 = self.area_1(self.d1, self.b1, x1[-1])
+            self.b_vn = self.width_vane(self.r_mid, self.l_mid, self.d_int,
+                                        self.a0, self.a1)
+            self.psi_th = self.theoretic_head_coefficient(self.psi,
+                                                          self.eta_idr)
+            self.phi_th = self.theoretic_flow_coefficient(self.phi, x1[-1],
+                                                          self.eta_vol)
+            self.beta_1c = self.angle_beta_1c(self.psi_th, self.phi_th,
+                                              self.u1_sf, self.u1)
+            self.epsilon_r = self.degree_reaction(self.phi_th, self.beta_1c,
+                                                  self.z)
+            self.u1_sf = self.slip_factor(self.u1, self.beta_1c, self.z)
+            x1.append(self.blade_blockage_1(self.beta_1c, self.d1, self.thk,
+                                            self.z))
+            self.cm1 = self.meridional_velocity_1(self.b1, self.d1, x1[-1],
+                                                  self.flow, self.eta_vol)
+            self.w1 = self.relative_velocity_1(self.cm1, self.beta_1c)
+            if len(x1) > 2:
+                dif = abs(x1[-1] - x1[-2])
+        self.x1 = x1[-1]
+
+        dif = 1
+        err = .001
+        x2 = [1]
+        while dif > err:
+            self.theta_2 = self.angle_theta_2(self.d_int, self.r_mid, self.d2)
+            self.b2 = self.width_2(self.a0, self.a1, self.r_mid, self.l_mid,
+                                   self.theta_2, self.d2)
+            self.u2 = self.circumferential_velocity_2(self.omega, self.d2)
+            self.cm2 = self.meridional_velocity_2(self.b2, x2[-1], self.flow,
+                                                  self.eta_vol, self.d2)
+            self.beta_2c = self.angle_beta_2c(self.cm2, self.u2, self.gamma)
+            self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
+            x2.append(self.blade_blockage_2(self.beta_2c, self.thk, self.z,
+                                            self.d2))
+            if len(x2) > 2:
+                dif = abs(x2[-1] - x2[-2])
+        self.x2 = x2[-1]
+
+        print(math.degrees(self.beta_2c))
+        print(math.degrees(self.beta_1c))
+
+
 def main(**kwargs):
-    """Execute test."""
-    mp = Impeller(**kwargs)
+    """Execute test and print results."""
+    test = Test(**kwargs)
 
     for k, v in sorted(list(globals().items())):
         if type(v) in (float, int, list):
             print(k, ' ', v)
 
-    l = mp.__dict__.items()  # list of tuples [(k, v)]
+    l = test.__dict__.items()  # list of tuples [(k, v)]
     for i in sorted(l, key=lambda l: l[0]):  # sort by k
         if type(i[1]) is list:
             t = []
