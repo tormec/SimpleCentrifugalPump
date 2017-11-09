@@ -56,7 +56,7 @@ class Pre_Values(object):
         """Calculate rotational speed at diff. couple poles.
 
         :param slip (int): slip for electric induction motor [%]
-        :param hz (int):utility frequency [Hz]
+        :param hz (int): utility frequency [Hz]
         :return rpm (list): rotational speed [rpm]
         """
         rpm = []
