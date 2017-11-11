@@ -8,52 +8,130 @@ from simple_centrifugal_pump import Pre_Values as scp_pre
 
 
 class Gui(tk.Frame):
-    """Graphical User Interface for the script."""
+    """GUI for the script."""
 
     def __init__(self, master):
         """Initialize the interface."""
         tk.Frame.__init__(self)
 
         # notebook
-        n = ttk.Notebook(master)
-        n.grid(row=0, column=0)
+        ntb = ttk.Notebook(master)
+        ntb.grid(row=0, column=0)
 
-        self.f_tab1 = tk.Frame(n)
-        self.f_tab1.grid(row=0, column=0)
+        self.frm_tab1 = tk.Frame(ntb)
+        self.frm_tab1.grid(row=0, column=0)
 
-        self.f_tab2 = tk.Frame(n)
-        self.f_tab2.grid(row=0, column=1)
+        self.frm_tab2 = tk.Frame(ntb)
+        self.frm_tab2.grid(row=0, column=1)
 
-        self.f_tab3 = tk.Frame(n)
-        self.f_tab3.grid(row=0, column=3)
+        self.frm_tab3 = tk.Frame(ntb)
+        self.frm_tab3.grid(row=0, column=3)
 
-        n.add(self.f_tab1, text="Feasability Study")
-        n.add(self.f_tab2, text="Pump Shaft")
-        n.add(self.f_tab3, text="Impeller")
+        ntb.add(self.frm_tab1, text="Feasability Study")
+        ntb.add(self.frm_tab2, text="Pump Shaft")
+        ntb.add(self.frm_tab3, text="Impeller")
 
         # input variables
-        f_input = tk.Frame(self.f_tab1)
-        f_input.grid(row=0, column=0)
+        frm_input = tk.Frame(master)
+        frm_input.grid(row=0, column=1)
 
-        l_flow = tk.Label(f_input, text="Flow [m^3/s]")
-        l_flow.grid(row=0, column=0)
+        lbl_flow = tk.Label(frm_input, text="Flow [m^3/s]", anchor="e")
+        lbl_flow.grid(row=0, column=0, sticky="e, w")
         self.flow = tk.DoubleVar()
-        e_flow = tk.Entry(f_input, textvariable=self.flow, width=10)
-        e_flow.grid(row=0, column=1, padx=5)
+        ent_flow = tk.Entry(frm_input, textvariable=self.flow, width=10)
+        ent_flow.grid(row=0, column=1, padx=5)
 
-        l_head = tk.Label(f_input, text="Head [m]")
-        l_head.grid(row=0, column=2)
+        lbl_head = tk.Label(frm_input, text="Head [m]", anchor="e")
+        lbl_head.grid(row=1, column=0, sticky="e, w")
         self.head = tk.DoubleVar()
-        e_head = tk.Entry(f_input, textvariable=self.head, width=10)
-        e_head.grid(row=0, column=3, padx=5)
+        ent_head = tk.Entry(frm_input, textvariable=self.head, width=10)
+        ent_head.grid(row=1, column=1, padx=5)
 
-        b_calc = tk.Button(f_input, text="Calculate",
-                           command=self.print_pre_values)
-        b_calc.grid(row=0, column=4)
+        lbl_hz = tk.Label(frm_input, text="f [Hz]", anchor="e")
+        lbl_hz.grid(row=2, column=0, sticky="e, w")
+        self.hz = tk.DoubleVar()
+        self.hz.set("50")
+        ent_hz = tk.Entry(frm_input, textvariable=self.hz, width=10)
+        ent_hz.grid(row=2, column=1, padx=5)
+
+        lbl_slip = tk.Label(frm_input, text="slip [%]", anchor="e")
+        lbl_slip.grid(row=3, column=0, sticky="e, w")
+        self.slip = tk.DoubleVar()
+        self.slip.set("3")
+        ent_slip = tk.Entry(frm_input, textvariable=self.slip, width=10)
+        ent_slip.grid(row=3, column=1, padx=5)
+
+        lbl_tau_adm = tk.Label(frm_input, text="\u03C4 adm [MPa]", anchor="e")
+        lbl_tau_adm.grid(row=4, column=0, sticky="e, w")
+        self.tau_adm = tk.DoubleVar()
+        ent_tau_adm = tk.Entry(frm_input, textvariable=self.tau_adm, width=10)
+        ent_tau_adm.grid(row=4, column=1, padx=5)
+
+        lbl_thk = tk.Label(frm_input, text="blade thk. [m]", anchor="e")
+        lbl_thk.grid(row=5, column=0, sticky="e, w")
+        self.thk = tk.DoubleVar()
+        self.thk.set(".003")
+        ent_thk = tk.Entry(frm_input, textvariable=self.thk, width=10)
+        ent_thk.grid(row=5, column=1, padx=5)
+
+        lbl_lm = tk.Label(frm_input, text="lm", anchor="e")
+        lbl_lm.grid(row=6, column=0, sticky="e, w")
+        self.lm = tk.DoubleVar()
+        self.lm.set(".04")
+        ent_lm = tk.Entry(frm_input, textvariable=self.lm, width=10)
+        ent_lm.grid(row=6, column=1, padx=5)
+
+        lbl_lw = tk.Label(frm_input, text="lw", anchor="e")
+        lbl_lw.grid(row=7, column=0, sticky="e, w")
+        self.lw = tk.DoubleVar()
+        self.lw.set(".50")
+        ent_lw = tk.Entry(frm_input, textvariable=self.lw, width=10)
+        ent_lw.grid(row=7, column=1, padx=5)
+        
+        lbl_km = tk.Label(frm_input, text="km", anchor="e")
+        lbl_km.grid(row=8, column=0, sticky="e, w")
+        self.km = tk.DoubleVar()
+        self.km.set("1.2")
+        ent_km = tk.Entry(frm_input, textvariable=self.km, width=10)
+        ent_km.grid(row=8, column=1, padx=5)
+
+        lbl_eta_vol = tk.Label(frm_input, text="\u03B7 vol", anchor="e")
+        lbl_eta_vol.grid(row=9, column=0, sticky="e, w")
+        self.eta_vol = tk.DoubleVar()
+        ent_eta_vol = tk.Entry(frm_input, textvariable=self.eta_vol, width=10)
+        ent_eta_vol.grid(row=9, column=1, padx=5)
+
+        lbl_eta_idr = tk.Label(frm_input, text="\u03B7 idr", anchor="e")
+        lbl_eta_idr.grid(row=10, column=0, sticky="e, w")
+        self.eta_idr = tk.DoubleVar()
+        ent_eta_idr = tk.Entry(frm_input, textvariable=self.eta_idr, width=10)
+        ent_eta_idr.grid(row=10, column=1, padx=5)
+
+        lbl_d2 = tk.Label(frm_input, text="d2 [m]", anchor="e")
+        lbl_d2.grid(row=11, column=0, sticky="e, w")
+        self.d2 = tk.DoubleVar()
+        ent_d2 = tk.Entry(frm_input, textvariable=self.d2, width=10)
+        ent_d2.grid(row=11, column=1, padx=5)
+
+        lbl_gamma_2 = tk.Label(frm_input, text="\u03b3 [deg]", anchor="e")
+        lbl_gamma_2.grid(row=12, column=0, sticky="e, w")
+        self.gamma_2 = tk.IntVar()
+        ent_gamma_2 = tk.Entry(frm_input, textvariable=self.gamma_2, width=10)
+        ent_gamma_2.grid(row=12, column=1, padx=5)
+
+        lbl_z = tk.Label(frm_input, text="number of blade", anchor="e")
+        lbl_z.grid(row=13, column=0, sticky="e, w")
+        self.z = tk.IntVar()
+        ent_z = tk.Entry(frm_input, textvariable=self.z, width=10)
+        ent_z.grid(row=13, column=1, padx=5)
+        
+        btn_calc = tk.Button(frm_input, text="Calculate",
+                             command=self.print_pre_values)
+        btn_calc.grid(row=14, column=0, columnspan=2)
 
         # table results feasability study
-        f_fs_results = tk.Frame(self.f_tab1)
-        f_fs_results.grid(row=1, column=0)
+        frm_fs_results = tk.Frame(self.frm_tab1)
+        frm_fs_results.grid(row=1, column=0)
 
         unit_col = ["", "[rpm]", "", "", "", "[m/s]", "[mm]", "[mm]", "",
                     "[m]", ""]
@@ -62,8 +140,8 @@ class Gui(tk.Frame):
         title_col = list(zip(unit_col, name_col))
 
         for i, v in enumerate(title_col):
-            l_title = tk.Label(f_fs_results, text=v[0] + "\n" + v[1])
-            l_title.grid(row=0, column=i+1)
+            lbl_title = tk.Label(frm_fs_results, text=v[0] + "\n" + v[1])
+            lbl_title.grid(row=0, column=i+1)
 
         self.choice = tk.IntVar()
         self.entry_result = []
@@ -72,11 +150,11 @@ class Gui(tk.Frame):
                 pos = str(r) + "," + str(c)  # name widget
                 var = tk.StringVar()
                 self.entry_result.append([pos, var])
-                e_result = tk.Entry(f_fs_results, width=8, textvariable=var)
-                e_result.grid(row=r+1, column=c+1)
-                r_result = tk.Radiobutton(f_fs_results, val=r,
+                ent_result = tk.Entry(frm_fs_results, width=8, textvariable=var)
+                ent_result.grid(row=r+1, column=c+1)
+                rdb_result = tk.Radiobutton(frm_fs_results, val=r,
                                           variable=self.choice)
-                r_result.grid(row=r+1, column=0)
+                rdb_result.grid(row=r+1, column=0)
 
     def print_pre_values(self):
 
@@ -102,7 +180,7 @@ class Gui(tk.Frame):
 
 
 def main():
-    """Execute GUI."""
+    """Run the GUI."""
     root = tk.Tk()
 
     app = Gui(master=root)

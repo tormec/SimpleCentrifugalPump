@@ -160,14 +160,14 @@ class Shaft(object):
 
         return torq
 
-    def diameter_shaft(self, torq, tau):
+    def diameter_shaft(self, torq, tau_adm):
         """Calculate shaft diameter.
 
         :param torq (float): torque [Nm]
-        :param tau (int): tau admissible [MPa]
+        :param tau_adm (int): tau admissible [MPa]
         :return d_sh (float): shaft diameter [m]
         """
-        d_sh = ((32 * torq) / (math.pi * (tau * 10**6)))**(1/3)
+        d_sh = ((32 * torq) / (math.pi * (tau_adm * 10**6)))**(1/3)
 
         return d_sh
 
@@ -525,17 +525,17 @@ class Impeller(object):
 
         return w1
 
-    def angle_beta_2c(self, cm2, u2, gamma):
+    def angle_beta_2c(self, cm2, u2, gamma_2):
         """Calculate blade working angle between relative and circumferential
         velocity at section 2.
 
         :param cm2 (float): meridional velocity [m/s]
         :param u2 (float): circumferential velocity [m/s]
-        :param gamma (int): measured angle between cm2 and vertical [deg]
+        :param gamma_2 (int): measured angle between cm2 and vertical [deg]
         :return beta_2c (float): angle between rel. and circum. velocity [m/s]
         """
-        gammar = math.radians(gamma)
-        beta_2c = math.atan((cm2 * math.cos(gammar)) / u2)
+        gammar_2 = math.radians(gamma_2)
+        beta_2c = math.atan((cm2 * math.cos(gammar_2)) / u2)
 
         return beta_2c
 
@@ -642,7 +642,7 @@ class Test(Pre_Values, Shaft, Impeller):
         :param slip (int): slip for electric induction motor [%]
         :param hz (int):utility frequency [Hz]
         :param cps (int): the chosen couple poles for electric motor
-        :param tau (int): tau admissible [MPa]
+        :param tau_adm (int): tau admissible [MPa]
         :param thk (float): blade thickness [m]
         :param lm (float): loss coefficient at section 0
         :param lw (float): low-pressure peak coefficient at blades at section 0
@@ -650,7 +650,7 @@ class Test(Pre_Values, Shaft, Impeller):
         :param eta_vol (float): volumetric efficency
         :param eta_idr (float): idraulic efficency
         :param d2 (float): measured diameter
-        :param gamma (int): measured ang. between cm2 and vert. at sec. 2 [deg]
+        :param gamma_2 (int): measured angle between cm2 and vertical [deg]
         :param z (int): number of blades
         """
         self.flow = kwargs["flow"]
@@ -661,7 +661,7 @@ class Test(Pre_Values, Shaft, Impeller):
         self.slip = kwargs["slip"]
         self.hz = kwargs["hz"]
         self.cps = kwargs["cps"]
-        self.tau = kwargs["tau"]
+        self.tau_adm = kwargs["tau_adm"]
         self.thk = kwargs["thk"]
         self.lm = kwargs["lm"]
         self.lw = kwargs["lw"]
@@ -669,7 +669,7 @@ class Test(Pre_Values, Shaft, Impeller):
         self.eta_vol = kwargs["eta_vol"]
         self.eta_idr = kwargs["eta_idr"]
         self.d2 = kwargs["d2"]
-        self.gamma = kwargs["gamma"]
+        self.gamma_2 = kwargs["gamma_2"]
         self.z = kwargs["z"]
 
         # feasability study
@@ -699,7 +699,7 @@ class Test(Pre_Values, Shaft, Impeller):
         self.omega = self.angular_velocity(self.rpm)
         self.powr = self.power(self.eta_tot, self.flow, self.head)
         self.torq = self.torque(self.powr, self.omega)
-        self.d_sh = self.diameter_shaft(self.torq, self.tau)
+        self.d_sh = self.diameter_shaft(self.torq, self.tau_adm)
         self.d_hu = self.diameter_hub(self.d_sh)
 
         # impeller design
@@ -782,7 +782,7 @@ class Test(Pre_Values, Shaft, Impeller):
             self.u2 = self.circumferential_velocity_2(self.omega, self.d2)
             self.cm2 = self.meridional_velocity_2(self.b2, x2[-1], self.flow,
                                                   self.eta_vol, self.d2)
-            self.beta_2c = self.angle_beta_2c(self.cm2, self.u2, self.gamma)
+            self.beta_2c = self.angle_beta_2c(self.cm2, self.u2, self.gamma_2)
             self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
             x2.append(self.blade_blockage_2(self.beta_2c, self.thk, self.z,
                                             self.d2))
@@ -823,13 +823,13 @@ if __name__ == '__main__':
          phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
          eta_coef=[.88, .76, .73],  # efficency for diff. couple poles
          cps=4,  # the chosen couple poles for electric motor
-         tau=30,  # tau admissible for C40 steel [MPa]
+         tau_adm=30,  # tau admissible for C40 steel [MPa]
          thk=.003,  # blade thickness [m]
-         lm=0.04,  # loss coefficient at section 0
-         lw=0.50,  # low-pressure peak coefficient at blades at section 0
+         lm=.04,  # loss coefficient at section 0
+         lw=.50,  # low-pressure peak coefficient at blades at section 0
          km=1.2,  # rate between circumeferential velocity cm2 and c0
-         eta_vol=0.940,  # volumetric efficency
+         eta_vol=.940,  # volumetric efficency
          eta_idr=.88,  # idraulic efficency
          d2=.112,  # measured diameter [m]
-         gamma=5,  # measured angle between cm2 and vertical [deg]
+         gamma_2=5,  # measured angle between cm2 and vertical [deg]
          z=7)  # number of blades
