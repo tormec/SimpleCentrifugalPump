@@ -451,7 +451,7 @@ class Impeller(object):
             r.append(d_int / 2 - r_mid * math.cos(theta[i]))
             b_vn.append(area[i] / (2 * math.pi * r[i]))
 
-        return list(zip(theta, length, b_vn, r, area))
+        return list(zip(theta, length, area, r, b_vn))
 
     def meridional_velocity_2(self, b2, x2, flow, eta_vol, d2):
         """Calculate meridional velocity at section 2.
