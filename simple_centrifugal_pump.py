@@ -425,7 +425,7 @@ class Impeller(object):
 
         return l_mid
 
-    def width_vane(self, r_mid, l_mid, d_int, a0, a1):
+    def width_impeller_vane(self, r_mid, l_mid, d_int, a0, a1):
         """Calculate width impeller vane as different diameters
         at equals angles in the curved zone.
 
@@ -434,7 +434,7 @@ class Impeller(object):
         :param d_int (float): center radius curvature front shroud [m]
         :param a0 (float): area [m^2]
         :param a1 (float): area [m^2]
-        :return b_vn (list): diameters at equals angles in the curved zone [m]
+        :return b_im (list): diameters at equals angles in the curved zone [m]
         """
         # in the curved zone, the mean streamline is a quarter of arc of circle
         # and along its path are considered:
@@ -443,43 +443,71 @@ class Impeller(object):
         length = []  # cumulative lengths
         area = []  # area at different lengths
         r = []  # radius at different angles
-        b_vn = []
+        b_im = []
         for i in range(n):
             theta.append((math.pi / (2 * n)) * i)
             length.append(r_mid * theta[i])
             area.append(a0 + (a1 - a0) * length[i] / l_mid)
             r.append(d_int / 2 - r_mid * math.cos(theta[i]))
-            b_vn.append(area[i] / (2 * math.pi * r[i]))
+            b_im.append(area[i] / (2 * math.pi * r[i]))
 
-        return list(zip(theta, length, area, r, b_vn))
+        return list(zip(theta, length, area, r, b_im))
 
-    def meridional_velocity_2(self, b2, x2, flow, eta_vol, d2):
-        """Calculate meridional velocity at section 2.
+    def meridional_velocity_component_2(self, b2, d2, x2, flow, eta_vol):
+        """Calculate meridional velocity component of the absolute velocity
+        at section 2.
 
         :param b2 (float): impeller width [m]
+        :param d2 (float): measured diameter
         :param x2 (float): blade blockage
         :param flow (float): flow rate [m^3/s]
         :param eta_vol (float): volumetric efficency
-        :param d2 (float): measured diameter
-        :return cm2 (float): meridional velocity [m/s]
+        :return cm2 (float): meridional velocity component [m/s]
         """
         cm2 = flow / (math.pi * d2 * b2 * x2 * eta_vol)
 
         return cm2
 
-    def meridional_velocity_1(self, b1, d1, x1, flow, eta_vol):
-        """Calculate meridional velocity at section 1.
+    def meridional_velocity_component_1(self, b1, d1, x1, flow, eta_vol):
+        """Calculate meridional velocity component of the absolute velocity
+        at section 1.
 
         :param b1 (float): impeller width [m]
         :param d1 (float): diameter [m]
         :param x1 (float): blade blockage
         :param flow (float): flow rate [m^3/s]
         :param eta_vol (float): volumetric efficency
-        :return cm1 (float): meridional velocity [m/s]
+        :return cm1 (float): meridional velocity component [m/s]
         """
         cm1 = flow / (math.pi * d1 * b1 * x1 * eta_vol)
 
         return cm1
+
+    def circumferential_velocity_component_2(self, u2, cm2, beta_2c):
+        """Calculate circumferential velocity component of the absolute
+        velocity at section 2.
+
+        :param u2 (float): circumferential velocity [m/s]
+        :param cm2 (float): meridional velocity component [m/s]
+        :param beta_2c (float): angle between rel. and circum. velocity [m/s]
+        :return cu2 (float): circumferential velocity component [m/s]
+        """
+        cu2 = u2 - cm2 * 1 / math.tan(beta_2c)
+
+        return cu2
+
+    def circumferential_velocity_component_1(self, u1, cm1, beta_1c):
+        """Calculate circumferential velocity component of the absolute
+        velocity at section 1.
+
+        :param u1 (float): circumferential velocity [m/s]
+        :param cm1 (float): meridional velocity component [m/s]
+        :param beta_1c (float): angle between rel. and circum. velocity [m/s]
+        :return cu1 (float): circumferential velocity component [m/s]
+        """
+        cu1 = u1 - cm1 * 1 / math.tan(beta_1c)
+
+        return cu1
 
     def circumferential_velocity_2(self, omega, d2):
         """Calculate circumferential velocity at section 2.
@@ -622,13 +650,77 @@ class Impeller(object):
         :param z (int): number of blades
         :return epsilon_r (float): degree of reaction
         """
-        epsilon_r = 1 - 0.5 * (1 - phi_th / math.tan(beta_1c) -
-                               (math.sin(beta_1c))**0.5 / z**0.7)
+        epsilon_r = 1 - .5 * (1 - phi_th / math.tan(beta_1c) -
+                              (math.sin(beta_1c))**.5 / z**.7)
 
         return epsilon_r
 
 
-class Test(Pre_Values, Shaft, Impeller):
+class Volute(object):
+    """Methods for impeller design."""
+
+    def absolute_velocity_throat(self, cu1):
+        """Calculate absolute velocity at throat section.
+
+        :param cu1 (float): circumferential velocity component [m/s]
+        :return c_thr (float): absolute velocity [m/s]
+        """
+        c_thr = .5 * cu1
+
+        return c_thr
+
+    def area_throat(self, flow, c_thr):
+        """Calculate area at throat section.
+
+        :param flow (float): flow rate [m^3/s]
+        :param c_thr (float): absolute velocity [m/s]
+        :return a_thr (float): area [m^2]
+        """
+        a_thr = flow / c_thr
+
+        return a_thr
+
+    def radius_start(self, d1):
+        """Calculate internal radius at the start wrap angle.
+
+        :param d1 (float): diameter [m]
+        :return r_theta_st (float): radius [m]
+        """
+        r1 = d1 / 2
+        r_theta_st = 1.1 * r1
+
+        return r_theta_st
+
+    def width_start(self, b1):
+        """Calculate width at the start wrap angle.
+
+        :param b1 (float): impeller width [m]
+        :return b_theta_0 (float): width [m]
+        """
+        b_theta_st = 1.715 * b1
+
+        return b_theta_st
+
+    def width_volute_vane(self, a_thr, theta_st):
+        """Calculate width volute vane at different wrap angles.
+
+        :param a_thr (float): area [m^2]
+        :param theta_st (float): start wrap angle [rad]
+        :return b_vl (list): diameters at different wrap angles [m]
+        """
+        n = 8  # num. divisions circumference
+        theta = []  # cumulative angles
+        b_vl = []
+        theta.append(math.radians(theta_st))
+        b_vl.append((2 * a_thr * theta[-1] / math.pi**2)**.5)
+        for i in range(1, n + 1):
+            theta.append((2 * math.pi / n) * i)
+            b_vl.append((2 * a_thr * theta[-1] / math.pi**2)**.5)
+
+        return list(zip(theta, b_vl))
+
+
+class Test(Pre_Values, Shaft, Impeller, Volute):
     """Test methods."""
 
     def __init__(self, **kwargs):
@@ -671,6 +763,7 @@ class Test(Pre_Values, Shaft, Impeller):
         self.d2 = kwargs["d2"]
         self.gamma_2 = kwargs["gamma_2"]
         self.z = kwargs["z"]
+        self.theta_st = kwargs["theta_st"]
 
         # feasability study
         self.fs_rpm = self.rotational_speed(self.slip, self.hz)
@@ -752,8 +845,8 @@ class Test(Pre_Values, Shaft, Impeller):
             self.phi = self.flow_coefficient(self.d1, self.b1, self.u1,
                                              x1[-1], self.flow, self.eta_vol)
             self.a1 = self.area_1(self.d1, self.b1, x1[-1])
-            self.b_vn = self.width_vane(self.r_mid, self.l_mid, self.d_int,
-                                        self.a0, self.a1)
+            self.b_im = self.width_impeller_vane(self.r_mid, self.l_mid,
+                                                 self.d_int, self.a0, self.a1)
             self.psi_th = self.theoretic_head_coefficient(self.psi,
                                                           self.eta_idr)
             self.phi_th = self.theoretic_flow_coefficient(self.phi, x1[-1],
@@ -765,8 +858,12 @@ class Test(Pre_Values, Shaft, Impeller):
             self.u1_sf = self.slip_factor(self.u1, self.beta_1c, self.z)
             x1.append(self.blade_blockage_1(self.beta_1c, self.d1, self.thk,
                                             self.z))
-            self.cm1 = self.meridional_velocity_1(self.b1, self.d1, x1[-1],
-                                                  self.flow, self.eta_vol)
+            self.cm1 = self.meridional_velocity_component_1(self.b1, self.d1,
+                                                            x1[-1], self.flow,
+                                                            self.eta_vol)
+            self.cu1 = self.circumferential_velocity_component_1(self.u1,
+                                                                 self.cm1,
+                                                                 self.beta_1c)
             self.w1 = self.relative_velocity_1(self.cm1, self.beta_1c)
             if len(x1) > 2:
                 dif = abs(x1[-1] - x1[-2])
@@ -780,9 +877,13 @@ class Test(Pre_Values, Shaft, Impeller):
             self.b2 = self.width_2(self.a0, self.a1, self.r_mid, self.l_mid,
                                    self.theta_2, self.d2)
             self.u2 = self.circumferential_velocity_2(self.omega, self.d2)
-            self.cm2 = self.meridional_velocity_2(self.b2, x2[-1], self.flow,
-                                                  self.eta_vol, self.d2)
+            self.cm2 = self.meridional_velocity_component_2(self.b2, self.d2,
+                                                            x2[-1], self.flow,
+                                                            self.eta_vol)
             self.beta_2c = self.angle_beta_2c(self.cm2, self.u2, self.gamma_2)
+            self.cu2 = self.circumferential_velocity_component_2(self.u2,
+                                                                 self.cm2,
+                                                                 self.beta_2c)
             self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
             x2.append(self.blade_blockage_2(self.beta_2c, self.thk, self.z,
                                             self.d2))
@@ -790,8 +891,12 @@ class Test(Pre_Values, Shaft, Impeller):
                 dif = abs(x2[-1] - x2[-2])
         self.x2 = x2[-1]
 
-        print(math.degrees(self.beta_2c))
-        print(math.degrees(self.beta_1c))
+        # volute design
+        self.r_theta_st = self.radius_start(self.d1)
+        self.b_theta_st = self.width_start(self.b1)
+        self.c_thr = self.absolute_velocity_throat(self.cu1)
+        self.a_thr = self.area_throat(self.flow, self.c_thr)
+        self.b_vl = self.width_volute_vane(self.a_thr, self.theta_st)
 
 
 def main(**kwargs):
@@ -817,7 +922,7 @@ def main(**kwargs):
 
 
 if __name__ == '__main__':
-    main(flow=0.018, head=28,
+    main(flow=.018, head=28,
          slip=3, hz=50,  # slip and utility frequency for electric motor
          psi_coef=[.50, .55, .69],  # head coef. for diff. couple poles
          phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
@@ -832,4 +937,5 @@ if __name__ == '__main__':
          eta_idr=.88,  # idraulic efficency
          d2=.112,  # measured diameter [m]
          gamma_2=5,  # measured angle between cm2 and vertical [deg]
-         z=7)  # number of blades
+         z=7,  # number of blades
+         theta_st=10)  # start wrap angle for volute [deg]
