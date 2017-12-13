@@ -705,17 +705,19 @@ class Volute(object):
         """Calculate width volute vane at different wrap angles.
 
         :param a_thr (float): area [m^2]
-        :param theta_st (float): start wrap angle [rad]
+        :param theta_st (float): start wrap angle [deg]
         :return b_vl (list): diameters at different wrap angles [m]
         """
         n = 8  # num. divisions circumference
         theta = []  # cumulative angles
         b_vl = []
-        theta.append(math.radians(theta_st))
-        b_vl.append((2 * a_thr * theta[-1] / math.pi**2)**.5)
-        for i in range(1, n + 1):
-            theta.append((2 * math.pi / n) * i)
-            b_vl.append((2 * a_thr * theta[-1] / math.pi**2)**.5)
+        theta_st = math.radians(theta_st)
+        for i in range(n + 1):  # 0, .., n
+            theta_i = ((2 * math.pi / n) * i)
+            if theta_i > theta_st:
+                theta.append(theta_i)
+                b_vl.append((2 * a_thr * (theta_i - theta_st) /
+                            math.pi**2)**.5)
 
         return list(zip(theta, b_vl))
 
