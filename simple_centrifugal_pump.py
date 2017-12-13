@@ -7,6 +7,7 @@ import math
 # 0: impeller eye
 # 1: impeller blade trailing edge
 # 2: impeller blade leading edge
+# 3: volute start wrap angle
 
 # physical constants
 G = 9.81  # gravity acceleration [m/s^2]
@@ -684,39 +685,39 @@ class Volute(object):
         """Calculate internal radius at the start wrap angle.
 
         :param d1 (float): diameter [m]
-        :return r_theta_st (float): radius [m]
+        :return r3 (float): radius [m]
         """
         r1 = d1 / 2
-        r_theta_st = 1.1 * r1
+        r3 = 1.1 * r1
 
-        return r_theta_st
+        return r3
 
     def width_start(self, b1):
         """Calculate width at the start wrap angle.
 
         :param b1 (float): impeller width [m]
-        :return b_theta_0 (float): width [m]
+        :return b3 (float): width [m]
         """
-        b_theta_st = 1.715 * b1
+        b3 = 1.715 * b1
 
-        return b_theta_st
+        return b3
 
-    def width_volute_vane(self, a_thr, theta_st):
+    def width_volute_vane(self, a_thr, theta_3):
         """Calculate width volute vane at different wrap angles.
 
         :param a_thr (float): area [m^2]
-        :param theta_st (float): start wrap angle [deg]
+        :param theta_3 (int): start wrap angle [deg]
         :return b_vl (list): diameters at different wrap angles [m]
         """
         n = 8  # num. divisions circumference
         theta = []  # cumulative angles
         b_vl = []
-        theta_st = math.radians(theta_st)
+        theta_3 = math.radians(theta_3)
         for i in range(n + 1):  # 0, .., n
             theta_i = ((2 * math.pi / n) * i)
-            if theta_i > theta_st:
+            if theta_i > theta_3:
                 theta.append(theta_i)
-                b_vl.append((2 * a_thr * (theta_i - theta_st) /
+                b_vl.append((2 * a_thr * (theta_i - theta_3) /
                             math.pi**2)**.5)
 
         return list(zip(theta, b_vl))
@@ -746,6 +747,7 @@ class Test(Pre_Values, Shaft, Impeller, Volute):
         :param d2 (float): measured diameter
         :param gamma_2 (int): measured angle between cm2 and vertical [deg]
         :param z (int): number of blades
+        :param theta_3 (int): start wrap angle [deg]
         """
         self.flow = kwargs["flow"]
         self.head = kwargs["head"]
@@ -765,7 +767,7 @@ class Test(Pre_Values, Shaft, Impeller, Volute):
         self.d2 = kwargs["d2"]
         self.gamma_2 = kwargs["gamma_2"]
         self.z = kwargs["z"]
-        self.theta_st = kwargs["theta_st"]
+        self.theta_3 = kwargs["theta_3"]
 
         # feasability study
         self.fs_rpm = self.rotational_speed(self.slip, self.hz)
@@ -894,11 +896,11 @@ class Test(Pre_Values, Shaft, Impeller, Volute):
         self.x2 = x2[-1]
 
         # volute design
-        self.r_theta_st = self.radius_start(self.d1)
-        self.b_theta_st = self.width_start(self.b1)
+        self.r3 = self.radius_start(self.d1)
+        self.b3 = self.width_start(self.b1)
         self.c_thr = self.absolute_velocity_throat(self.cu1)
         self.a_thr = self.area_throat(self.flow, self.c_thr)
-        self.b_vl = self.width_volute_vane(self.a_thr, self.theta_st)
+        self.b_vl = self.width_volute_vane(self.a_thr, self.theta_3)
 
 
 def main(**kwargs):
@@ -940,4 +942,4 @@ if __name__ == '__main__':
          d2=.112,  # measured diameter [m]
          gamma_2=5,  # measured angle between cm2 and vertical [deg]
          z=7,  # number of blades
-         theta_st=10)  # start wrap angle for volute [deg]
+         theta_3=10)  # start wrap angle for volute [deg]
