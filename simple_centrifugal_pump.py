@@ -37,12 +37,12 @@ class Pre_Values(object):
         return rpm
 
     def type_number(self, rpm, flow, head):
-        """Calculate centrifugal pump's type number at diff. couple poles.
+        """Calculate centrifugal pump's typical number at diff. couple poles.
 
         :param rpm (list): rotational speed [rpm]
         :param flow (float): flow rate [m^3/s]
         :param head (float): head [m]
-        :return k_num (list): type number
+        :return k_num (list): typical number
         """
         k_num = []
         for n in rpm:
@@ -50,6 +50,54 @@ class Pre_Values(object):
             k_num.append(omega * flow**0.5 / (G * head)**0.75)
 
         return k_num
+
+    def phi_k(self, k_num):
+        """Calculate value of flow coef for a given pump's typical number.
+
+        The polynomial has been calculated applaying the curve fitting at nodes
+        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+        phi_coef    .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
+        weights     1 * 11
+        n           2
+
+        :param k_num (float): typical number
+        :return phi_coef (float): flow coefficient
+        """
+        phi_coef = 0.0567636 + 0.118979 * k_num - 0.0188811 * k_num**2
+
+        return phi_coef
+
+    def psi_k(self, k_num):
+        """Calculate value of head coef for a given pump's typical number.
+
+        The polynomial has been calculated applaying the curve fitting at nodes
+        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+        psi_coef    .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
+        weights     1 * 11
+        n           2
+
+        :param k_num (float): typical number
+        :return psi_coef (float): head coefficient
+        """
+        psi_coef = 0.5747273 - 0.0864569 * k_num - 0.0687646 * k_num**2
+
+        return psi_coef
+
+    def eta_k(self, k_num):
+        """Calculate value of efficency for a given pump's typical number.
+
+        The polynomial has been calculated applaying the curve fitting at nodes
+        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+        eta_coef    0 .650 .800 .890 .910 .920 .928 .929 .930 .929 .928
+        weights     1 * 11
+        n           2
+
+        :param k_num (float): typical number
+        :return eta_coef (float): efficency coefficient
+        """
+        eta_coef = - 0.2774 + 3.0137016 * k_num - 1.7473193 ** k_num**2
+
+        return eta_coef
 
     def _circumferential_velocity_1(self, head, psi_coef):
         """Calculate circumferential velocity at section 1
@@ -114,7 +162,7 @@ class Pre_Values(object):
         """Calculate the neat positive suction head required
         at diff. couple poles.
 
-        :param k_num (list): type number
+        :param k_num (list): typical number
         :param head (float): head [m]
         :return npsh_r (list): neat positive suction head required [m]
         """
@@ -723,7 +771,7 @@ class Volute(object):
         return list(zip(theta, b_vl))
 
 
-class Test(Pre_Values, Shaft, Impeller, Volute):
+class Project(Pre_Values, Shaft, Impeller, Volute):
     """Test methods."""
 
     def __init__(self, **kwargs):
@@ -905,7 +953,7 @@ class Test(Pre_Values, Shaft, Impeller, Volute):
 
 def main(**kwargs):
     """Execute test and print results."""
-    test = Test(**kwargs)
+    test = Project(**kwargs)
 
     for k, v in sorted(list(globals().items())):
         if type(v) in (float, int, list):
@@ -926,7 +974,7 @@ def main(**kwargs):
 
 
 if __name__ == '__main__':
-    main(flow=.018, head=28,
+    main(flow=.011, head=25,  # [m^3/s], [m]
          slip=3, hz=50,  # slip and utility frequency for electric motor
          psi_coef=[.50, .55, .69],  # head coef. for diff. couple poles
          phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
