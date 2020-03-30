@@ -57,13 +57,16 @@ class Pre_Values(object):
         The polynomial has been calculated applaying the curve fitting at nodes
         k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
         phi_coef    .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
-        weights     1 * 11
+        weights     ones(k_num)
         n           2
 
-        :param k_num (float): typical number
-        :return phi_coef (float): flow coefficient
+        :param k_num (list): typical number
+        :return phi_coef (list): flow coefficients
         """
-        phi_coef = 0.0567636 + 0.118979 * k_num - 0.0188811 * k_num**2
+        phi_coef = []
+        for k in k_num:
+            phi_poly = 0.0567636 + 0.118979 * k - 0.0188811 * k**2
+            phi_coef.append(phi_poly)
 
         return phi_coef
 
@@ -73,13 +76,16 @@ class Pre_Values(object):
         The polynomial has been calculated applaying the curve fitting at nodes
         k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
         psi_coef    .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
-        weights     1 * 11
+        weights     ones(k_num)
         n           2
 
-        :param k_num (float): typical number
-        :return psi_coef (float): head coefficient
+        :param k_num (list): typical number
+        :return psi_coef (list): head coefficients
         """
-        psi_coef = 0.5747273 - 0.0864569 * k_num - 0.0687646 * k_num**2
+        psi_coef = []
+        for k in k_num:
+            psi_poly = 0.5747273 - 0.0864569 * k - 0.0687646 * k**2
+            psi_coef.append(psi_poly)
 
         return psi_coef
 
@@ -89,13 +95,16 @@ class Pre_Values(object):
         The polynomial has been calculated applaying the curve fitting at nodes
         k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
         eta_coef    0 .650 .800 .890 .910 .920 .928 .929 .930 .929 .928
-        weights     1 * 11
+        weights     ones(k_num)
         n           2
 
-        :param k_num (float): typical number
-        :return eta_coef (float): efficency coefficient
+        :param k_num (list): typical number
+        :return eta_coef (list): efficency coefficients
         """
-        eta_coef = - 0.2774 + 3.0137016 * k_num - 1.7473193 ** k_num**2
+        eta_coef = []
+        for k in k_num:
+            eta_poly = - 0.2774 + 3.0137016 * k - 1.7473193 ** k**2
+            eta_coef.append(eta_poly)
 
         return eta_coef
 
@@ -772,10 +781,10 @@ class Volute(object):
 
 
 class Project(Pre_Values, Shaft, Impeller, Volute):
-    """Test methods."""
+    """Execute the project of a centrifugal pump."""
 
     def __init__(self, **kwargs):
-        """Take input variables and execute test.
+        """Take input variables and execute the project.
 
         :param flow (float): flow rate [m^3/s]
         :param head (float) head [m]
