@@ -23,169 +23,17 @@ D_INT = [.054, .070, .082, .107, .132, .159, .207, .260, .310, .340]  # [m]
 class Pre_Values(object):
     """Methods for feasability study of the impeller."""
 
-    def rotational_speed(self, slip, hz):
+    def rotational_speed(self, slip, hz, cp):
         """Calculate rotational speed at diff. couple poles.
 
-        :param slip (int): slip for electric induction motor [%]
+        :param slip (int): slip of electric induction motor [%]
         :param hz (int): utility frequency [Hz]
-        :return rpm (list): rotational speed [rpm]
+        :param cp (int): couple of poles of electric induction motor
+        :return rpm (float): rotational speed [rpm]
         """
-        rpm = []
-        for cp in CPOLES:
-            rpm.append(120 * hz / cp * (1 - slip / 100))
+        rpm = 120 * hz / cp * (1 - slip / 100)
 
         return rpm
-
-    def type_number(self, rpm, flow, head):
-        """Calculate centrifugal pump's typical number at diff. couple poles.
-
-        :param rpm (list): rotational speed [rpm]
-        :param flow (float): flow rate [m^3/s]
-        :param head (float): head [m]
-        :return k_num (list): typical number
-        """
-        k_num = []
-        for n in rpm:
-            omega = 2 * math.pi * n / 60
-            k = omega * flow**0.5 / (G * head)**0.75
-            if 0.2 <= k <= 1.2:
-                k_num.append(k)
-
-        return k_num
-
-    def phi_k(self, k_num):
-        """Calculate value of flow coef for a given pump's typical number.
-
-        The polynomial has been calculated applaying the curve fitting at nodes
-        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-        phi_coef    .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
-        weights     ones(k_num)
-        n           2
-
-        :param k_num (list): typical number
-        :return phi_coef (list): flow coefficients
-        """
-        phi_coef = []
-        for k in k_num:
-            phi_poly = 0.0567636 + 0.118979 * k - 0.0188811 * k**2
-            phi_coef.append(phi_poly)
-
-        return phi_coef
-
-    def psi_k(self, k_num):
-        """Calculate value of head coef for a given pump's typical number.
-
-        The polynomial has been calculated applaying the curve fitting at nodes
-        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-        psi_coef    .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
-        weights     ones(k_num)
-        n           2
-
-        :param k_num (list): typical number
-        :return psi_coef (list): head coefficients
-        """
-        psi_coef = []
-        for k in k_num:
-            psi_poly = 0.5747273 - 0.0864569 * k - 0.0687646 * k**2
-            psi_coef.append(psi_poly)
-
-        return psi_coef
-
-    def eta_k(self, k_num):
-        """Calculate value of efficency for a given pump's typical number.
-
-        The polynomial has been calculated applaying the curve fitting at nodes
-        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-        eta_coef    0 .650 .800 .890 .910 .920 .928 .929 .930 .929 .928
-        weights     ones(k_num)
-        n           2
-
-        :param k_num (list): typical number
-        :return eta_coef (list): efficency coefficients
-        """
-        eta_coef = []
-        for k in k_num:
-            eta_poly = - 0.2774 + 3.0137016 * k - 1.7473193 * k**2
-            eta_coef.append(eta_poly)
-
-        return eta_coef
-
-    def _circumferential_velocity_1(self, head, psi_coef):
-        """Calculate circumferential velocity at section 1
-        at diff. couple poles.
-
-        :param head (float): head [m]
-        :param psi_coef (list): head coefficients
-        :return u1 (list): circumferential velocity [m/s]
-        """
-        u1 = []
-        for psi in psi_coef:
-            u1.append((G * head / psi)**0.5)
-
-        return u1
-
-    def _diameter_1(self, u1, rpm):
-        """Calculate diameter at section 1 at diff. couple poles.
-
-        :param u1 (list): circumferential velocity [m/s]
-        :param rpm (list): rotational speed [rpm]
-        :return d1 (list): diameter [m]
-        """
-        d1 = []
-        zipped = zip(u1, rpm)
-        for u, n in zipped:
-            d1.append((60 * u) / (math.pi * n))
-
-        return d1
-
-    def _width_1(self, u1, d1, flow, phi_coef):
-        """Calculate impeller width at section 1 at diff. couple poles.
-
-        :param u1 (list): circumferential velocity [m/s]
-        :param d1 (list): diameter [m]
-        :param flow (float): flow rate [m^3/s]
-        :param phi_coef (list): flow coefficients
-        :return b1 (list): impeller width [m]
-        """
-        b1 = []
-        zipped = zip(u1, d1, phi_coef)
-        for u, d, phi in zipped:
-            b1.append(flow / (math.pi * d * u * phi))
-
-        return b1
-
-    def width_over_diameter_1(self, b1, d1):
-        """Calculate rate width over diameter at section 1
-        at diff. couple poles.
-
-        :param b1 (list): impeller width [m]
-        :param d1 (list): diameter [m]
-        :return bd1 (list): width over diameter
-        """
-        bd1 = []
-        zipped = zip(b1, d1)
-        for b, d in zipped:
-            bd1.append(b / d)
-
-        return bd1
-
-    def npsh_r(self, k_num, head):
-        """Calculate the neat positive suction head required
-        at diff. couple poles.
-
-        :param k_num (list): typical number
-        :param head (float): head [m]
-        :return npsh_r (list): neat positive suction head required [m]
-        """
-        npsh_r = []
-        for k in k_num:
-            npsh_r.append(.25 * k**(4/3) * head)
-
-        return npsh_r
-
-
-class Shaft(object):
-    """Methods for pump shaft design."""
 
     def angular_velocity(self, rpm):
         """Calculate angular velocity pump shaft.
@@ -196,6 +44,154 @@ class Shaft(object):
         omega = 2 * math.pi * rpm / 60
 
         return omega
+
+    def type_number(self, rpm, flow, head):
+        """Calculate centrifugal pump's typical number.
+
+        :param rpm (float): rotational speed [rpm]
+        :param flow (float): flow rate [m^3/s]
+        :param head (float): head [m]
+        :return k_num (float): typical number
+        """
+        omega = self.angular_velocity(rpm)
+        k_num = omega * flow**0.5 / (G * head)**0.75
+
+        return k_num
+
+    def k2n(self, k_num, flow, head):
+        """Calculate the rotational speed for a given typical number.
+
+        :param k_num (float): typical number
+        :param flow (float): flow rate [m^3/s]
+        :param head (float): head [m]
+        :return rpm (float): rotational speed [rpm]
+        """
+        omega = k_num * (G * head)**0.75 / flow**0.5
+        rpm = omega * 60 / (2 * math.pi)
+
+        return rpm
+
+    def n2cp(self, rpm, slip, hz):
+        """Calculate the couple of poles of electric induction motor
+        for a given rotational speed.
+
+        :param rpm (float): rotational speed [rpm]
+        :param slip (int): slip of the electric induction motor [%]
+        :param hz (int): utility frequency [Hz]
+        :return cp (int): couple of poles of electric induction motor
+        """
+        cp = 120 * hz / rpm * (1 - slip / 100)
+
+        return cp
+
+    def flow_number(self, k_num):
+        """Calculate value of flow number for a given pump's typical number.
+
+        The polynomial has been calculated applaying the curve fitting at nodes
+        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+        phi         .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
+        weights     ones(k_num)
+        n           2
+
+        :param k_num (float): typical number
+        :return phi (float): flow number
+        """
+        phi = 0.0567636 + 0.118979 * k_num - 0.0188811 * k_num**2
+
+        return phi
+
+    def head_number(self, k_num):
+        """Calculate value of head number for a given pump's typical number.
+
+        The polynomial has been calculated applaying the curve fitting at nodes
+        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+        psi         .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
+        weights     ones(k_num)
+        n           2
+
+        :param k_num (float): typical number
+        :return psi (float): head number
+        """
+        psi = 0.5747273 - 0.0864569 * k_num - 0.0687646 * k_num**2
+
+        return psi
+
+    def efficency(self, k_num):
+        """Calculate value of efficency for a given pump's typical number.
+
+        The polynomial has been calculated applaying the curve fitting at nodes
+        k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+        eta         0 .650 .800 .890 .910 .920 .928 .929 .930 .929 .928
+        weights     ones(k_num)
+        n           2
+
+        :param k_num (float): typical number
+        :return eta_coef (float): efficency coefficients
+        """
+        eta = - 0.2774 + 3.0137016 * k_num - 1.7473193 * k_num**2
+
+        return eta
+
+    def _circumferential_velocity_1(self, head, psi):
+        """Calculate circumferential velocity at section 1.
+
+        :param head (float): head [m]
+        :param psi (float): head number
+        :return u1 (float): circumferential velocity [m/s]
+        """
+        u1 = (G * head / psi)**0.5
+
+        return u1
+
+    def _diameter_1(self, u1, rpm):
+        """Calculate diameter at section 1.
+
+        :param u1 (float): circumferential velocity [m/s]
+        :param rpm (float): rotational speed [rpm]
+        :return d1 (float): diameter [m]
+        """
+        d1 = (60 * u1) / (math.pi * rpm)
+
+        return d1
+
+    def _width_1(self, u1, d1, flow, phi):
+        """Calculate impeller width at section 1.
+
+        :param u1 (float): circumferential velocity [m/s]
+        :param d1 (float): diameter [m]
+        :param flow (float): flow rate [m^3/s]
+        :param phi (float): flow number
+        :return b1 (float): impeller width [m]
+        """
+        b1 = flow / (math.pi * d1 * u1 * phi)
+
+        return b1
+
+    def width_over_diameter_1(self, b1, d1):
+        """Calculate rate width over diameter at section 1.
+
+        :param b1 (float): impeller width [m]
+        :param d1 (float): diameter [m]
+        :return bd1 (float): width over diameter
+        """
+        bd1 = b1 / d1
+
+        return bd1
+
+    def npsh_r(self, k_num, head):
+        """Calculate the neat positive suction head required.
+
+        :param k_num (float): typical number
+        :param head (float): head [m]
+        :return npsh_r (float): neat positive suction head required [m]
+        """
+        npsh_r = .25 * k_num**(4/3) * head
+
+        return npsh_r
+
+
+class Shaft(object):
+    """Methods for pump shaft design."""
 
     def power(self, eta_tot, flow, head):
         """Calculate power the el. motor should provide at pump shaft.
@@ -795,7 +791,6 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         :param eta_coef (list): total efficency
         :param slip (int): slip for electric induction motor [%]
         :param hz (int):utility frequency [Hz]
-        :param cps (int): the chosen couple poles for electric motor
         :param tau_adm (int): tau admissible [MPa]
         :param thk (float): blade thickness [m]
         :param lm (float): loss coefficient at section 0
@@ -808,192 +803,176 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         :param z (int): number of blades
         :param theta_3 (int): start wrap angle [deg]
         """
-        self.flow = kwargs["flow"]
-        self.head = kwargs["head"]
-        # self.fs_psi = kwargs["psi_coef"]
-        # self.fs_phi = kwargs["phi_coef"]
-        # self.fs_eta = kwargs["eta_coef"]
-        self.slip = kwargs["slip"]
-        self.hz = kwargs["hz"]
-        self.cps = kwargs["cps"]
-        self.tau_adm = kwargs["tau_adm"]
-        self.thk = kwargs["thk"]
-        self.lm = kwargs["lm"]
-        self.lw = kwargs["lw"]
-        self.km = kwargs["km"]
-        self.eta_vol = kwargs["eta_vol"]
-        self.eta_idr = kwargs["eta_idr"]
-        self.d2 = kwargs["d2"]
-        self.gamma_2 = kwargs["gamma_2"]
-        self.z = kwargs["z"]
-        self.theta_3 = kwargs["theta_3"]
+        flow = kwargs["flow"]
+        head = kwargs["head"]
+        slip = kwargs["slip"]
+        hz = kwargs["hz"]
+        tau_adm = kwargs["tau_adm"]
+        thk = kwargs["thk"]
+        lm = kwargs["lm"]
+        lw = kwargs["lw"]
+        km = kwargs["km"]
+        eta_vol = kwargs["eta_vol"]
+        eta_idr = kwargs["eta_idr"]
+        d2 = kwargs["d2"]
+        gamma_2 = kwargs["gamma_2"]
+        z = kwargs["z"]
+        theta_3 = kwargs["theta_3"]
 
         # feasability study
-        self.fs_rpm = self.rotational_speed(self.slip, self.hz)
-        self.fs_k_num = self.type_number(self.fs_rpm, self.flow, self.head)
-        self.fs_phi = self.phi_k(self.fs_k_num)
-        self.fs_psi = self.psi_k(self.fs_k_num)
-        self.fs_eta = self.eta_k(self.fs_k_num)
-        self.fs_u1 = self._circumferential_velocity_1(self.head, self.fs_psi)
-        self.fs_d1 = self._diameter_1(self.fs_u1, self.fs_rpm)
-        self.fs_b1 = self._width_1(self.fs_u1, self.fs_d1, self.flow,
-                                   self.fs_phi)
-        self.fs_bd1 = self.width_over_diameter_1(self.fs_b1, self.fs_d1)
-        self.fs_npsh_r = self.npsh_r(self.fs_k_num, self.head)
+        fs_rpm = []
+        fs_k_num = []
+        fs_phi = []
+        fs_psi = []
+        fs_eta = []
+        fs_u1 = []
+        fs_d1 = []
+        fs_b1 = []
+        fs_bd1 = []
+        fs_npsh_r = []
+        for i, cp in enumerate(CPOLES):
+            rpm = self.rotational_speed(slip, hz, cp)
+            k_num = self.type_number(rpm, flow, head)
+            # allow typical numbers only in the domain of centrifugal pumps
+            if 0.2 <= k_num <= 1.2:
+                fs_rpm.append(rpm)
+                fs_k_num.append(k_num)
+                fs_phi.append(self.flow_number(k_num))
+                fs_psi.append(self.head_number(k_num))
+                fs_eta.append(self.efficency(k_num))
+                fs_u1.append(self._circumferential_velocity_1(head, fs_psi[i]))
+                fs_d1.append(self._diameter_1(fs_u1[i], fs_rpm[i]))
+                fs_b1.append(self._width_1(fs_u1[i], fs_d1[i], flow,
+                                           fs_phi[i]))
+                fs_bd1.append(self.width_over_diameter_1(fs_b1[i], fs_d1[i]))
+                fs_npsh_r.append(self.npsh_r(k_num, head))
+
+        # choose the best typical number
+        # avoid k_num > .55 becuase it requires double curvature blades
+        k_num = []
+        for k in fs_k_num:
+            if k <= .55:
+                k_num.append(k)
+        if len(k_num) > 0:
+            k_num = max(k_num)
 
         # project values
-        val = CPOLES.index(self.cps)
-        self.rpm = self.rotational_speed(self.slip, self.hz)[val]
-        self.k_num = self.type_number(self.fs_rpm, self.flow, self.head)[val]
-        self.phi = self.fs_phi[val]
-        self.psi = self.fs_psi[val]
-        self.eta_tot = self.fs_eta[val]
-        self.u1 = self._circumferential_velocity_1(self.head, self.fs_psi)[val]
-        self.d1 = self._diameter_1(self.fs_u1, self.fs_rpm)[val]
-        self.b1 = self._width_1(self.fs_u1, self.fs_d1, self.flow,
-                                self.fs_phi)[val]
-        self.npsh_r = self.npsh_r(self.fs_npsh_r, self.head)[val]
+        rpm = self.k2n(k_num, flow, head)
+        cp = self.n2cp(rpm, slip, hz)
+        phi = self.flow_number(k_num)
+        psi = self.head_number(k_num)
+        eta = self.efficency(k_num)
+        u1 = self._circumferential_velocity_1(head, psi)
+        d1 = self._diameter_1(u1, rpm)
+        b1 = self._width_1(u1, d1, flow, phi)
+        bd1 = self.width_over_diameter_1(b1, d1)
+        npsh_r = self.npsh_r(k_num, head)
 
         # pump shaft design
-        self.omega = self.angular_velocity(self.rpm)
-        self.powr = self.power(self.eta_tot, self.flow, self.head)
-        self.torq = self.torque(self.powr, self.omega)
-        self.d_sh = self.diameter_shaft(self.torq, self.tau_adm)
-        self.d_hu = self.diameter_hub(self.d_sh)
+        omega = self.angular_velocity(rpm)
+        powr = self.power(eta, flow, head)
+        torq = self.torque(powr, omega)
+        d_sh = self.diameter_shaft(torq, tau_adm)
+        d_hu = self.diameter_hub(d_sh)
 
         # impeller design
         dif = 1
         err = .001
-        u1 = [self.u1]
+        u1 = [u1]
         while dif > err:
-            self.d1 = self.diameter_1(self.omega, u1[-1])
-            self.d1 = round(self.d1 * 1000) / 1000
-            u1.append(self.circumferential_velocity_1(self.omega, self.d1))
+            d1 = self.diameter_1(omega, u1[-1])
+            d1 = round(d1 * 1000) / 1000
+            u1.append(self.circumferential_velocity_1(omega, d1))
             dif = abs(u1[-1] - u1[-2])
-        self.u1 = u1[-1]
+        u1 = u1[-1]
 
-        self.psi = self.head_coefficient(self.u1, self.head)
+        psi = self.head_coefficient(u1, head)
 
         dif = 1
         err = .001
         x0 = [1]
         while dif > err:
-            self.d0_npsh = self.diameter_0_npsh(self.omega, x0[-1], self.flow,
-                                                self.lm, self.lw, self.km,
-                                                self.eta_vol)
-            self.d0_eff = self.diameter_0_efficency(self.omega, x0[-1],
-                                                    self.flow, self.km,
-                                                    self.eta_vol)
-            self.d0_cmp = self.diameter_0_compromise(self.omega, x0[-1],
-                                                     self.flow, self.eta_vol)
-            self.d0 = self.diameter_0(self.d0_npsh, self.d0_eff, self.d0_cmp)
-            x0.append(self.hub_blockage_0(self.d0, self.d_hu))
+            d0_npsh = self.diameter_0_npsh(omega, x0[-1], flow, lm, lw, km,
+                                           eta_vol)
+            d0_eff = self.diameter_0_efficency(omega, x0[-1], flow, km,
+                                               eta_vol)
+            d0_cmp = self.diameter_0_compromise(omega, x0[-1], flow, eta_vol)
+            d0 = self.diameter_0(d0_npsh, d0_eff, d0_cmp)
+            x0.append(self.hub_blockage_0(d0, d_hu))
             if len(x0) > 2:
                 dif = abs(x0[-1] - x0[-2])
-        self.x0 = x0[-1]
+        x0 = x0[-1]
 
-        self.d_mid = self.diameter_mean_streamline(self.d_hu, self.d0)
-        self.r_cvt = self.radius_curvature_front_shroud(self.d1)
-        self.d_int = self.center_mean_streamline(self.r_cvt, self.d0)
-        self.r_mid = self.radius_mean_streamline(self.d_int, self.d_mid)
-        self.l_mid = self.length_mean_streamline(self.r_mid, self.d_int,
-                                                 self.d1)
-        self.a0 = self.area_0(self.d_hu, self.d0)
+        d_mid = self.diameter_mean_streamline(d_hu, d0)
+        r_cvt = self.radius_curvature_front_shroud(d1)
+        d_int = self.center_mean_streamline(r_cvt, d0)
+        r_mid = self.radius_mean_streamline(d_int, d_mid)
+        l_mid = self.length_mean_streamline(r_mid, d_int, d1)
+        a0 = self.area_0(d_hu, d0)
 
         dif = 1
         err = .001
         x1 = [1]
-        self.u1_sf = 0  # initialization
+        u1_sf = 0
         while dif > err:
-            self.b1 = self.width_1(self.d1, self.u1, self.phi, x1[-1],
-                                   self.flow, self.eta_vol)
-            self.b1 = round(self.b1 * 1000) / 1000
-            self.phi = self.flow_coefficient(self.d1, self.b1, self.u1,
-                                             x1[-1], self.flow, self.eta_vol)
-            self.a1 = self.area_1(self.d1, self.b1, x1[-1])
-            self.b_im = self.width_impeller_vane(self.r_mid, self.l_mid,
-                                                 self.d_int, self.a0, self.a1)
-            self.psi_th = self.theoretic_head_coefficient(self.psi,
-                                                          self.eta_idr)
-            self.phi_th = self.theoretic_flow_coefficient(self.phi, x1[-1],
-                                                          self.eta_vol)
-            self.beta_1c = self.angle_beta_1c(self.psi_th, self.phi_th,
-                                              self.u1_sf, self.u1)
-            self.epsilon_r = self.degree_reaction(self.phi_th, self.beta_1c,
-                                                  self.z)
-            self.u1_sf = self.slip_factor(self.u1, self.beta_1c, self.z)
-            x1.append(self.blade_blockage_1(self.beta_1c, self.d1, self.thk,
-                                            self.z))
-            self.cm1 = self.meridional_velocity_component_1(self.b1, self.d1,
-                                                            x1[-1], self.flow,
-                                                            self.eta_vol)
-            self.cu1 = self.circumferential_velocity_component_1(self.u1,
-                                                                 self.cm1,
-                                                                 self.beta_1c)
-            self.w1 = self.relative_velocity_1(self.cm1, self.beta_1c)
+            b1 = self.width_1(d1, u1, phi, x1[-1], flow, eta_vol)
+            b1 = round(b1 * 1000) / 1000
+            phi = self.flow_coefficient(d1, b1, u1, x1[-1], flow, eta_vol)
+            a1 = self.area_1(d1, b1, x1[-1])
+            b_im = self.width_impeller_vane(r_mid, l_mid, d_int, a0, a1)
+            psi_th = self.theoretic_head_coefficient(psi, eta_idr)
+            phi_th = self.theoretic_flow_coefficient(phi, x1[-1], eta_vol)
+            beta_1c = self.angle_beta_1c(psi_th, phi_th, u1_sf, u1)
+            epsilon_r = self.degree_reaction(phi_th, beta_1c, z)
+            u1_sf = self.slip_factor(u1, beta_1c, z)
+            x1.append(self.blade_blockage_1(beta_1c, d1, thk, z))
+            cm1 = self.meridional_velocity_component_1(b1, d1, x1[-1], flow,
+                                                       eta_vol)
+            cu1 = self.circumferential_velocity_component_1(u1, cm1,  beta_1c)
+            w1 = self.relative_velocity_1(cm1, beta_1c)
             if len(x1) > 2:
                 dif = abs(x1[-1] - x1[-2])
-        self.x1 = x1[-1]
+        x1 = x1[-1]
 
         dif = 1
         err = .001
         x2 = [1]
         while dif > err:
-            self.theta_2 = self.angle_theta_2(self.d_int, self.r_mid, self.d2)
-            self.b2 = self.width_2(self.a0, self.a1, self.r_mid, self.l_mid,
-                                   self.theta_2, self.d2)
-            self.u2 = self.circumferential_velocity_2(self.omega, self.d2)
-            self.cm2 = self.meridional_velocity_component_2(self.b2, self.d2,
-                                                            x2[-1], self.flow,
-                                                            self.eta_vol)
-            self.beta_2c = self.angle_beta_2c(self.cm2, self.u2, self.gamma_2)
-            self.cu2 = self.circumferential_velocity_component_2(self.u2,
-                                                                 self.cm2,
-                                                                 self.beta_2c)
-            self.w2 = self.relative_velocity_2(self.cm2, self.beta_2c)
-            x2.append(self.blade_blockage_2(self.beta_2c, self.thk, self.z,
-                                            self.d2))
+            theta_2 = self.angle_theta_2(d_int, r_mid, d2)
+            b2 = self.width_2(a0, a1, r_mid, l_mid, theta_2, d2)
+            u2 = self.circumferential_velocity_2(omega, d2)
+            cm2 = self.meridional_velocity_component_2(b2, d2, x2[-1], flow,
+                                                       eta_vol)
+            beta_2c = self.angle_beta_2c(cm2, u2, gamma_2)
+            cu2 = self.circumferential_velocity_component_2(u2, cm2, beta_2c)
+            w2 = self.relative_velocity_2(cm2, beta_2c)
+            x2.append(self.blade_blockage_2(beta_2c, thk, z, d2))
             if len(x2) > 2:
                 dif = abs(x2[-1] - x2[-2])
-        self.x2 = x2[-1]
+        x2 = x2[-1]
 
         # volute design
-        self.r3 = self.radius_start(self.d1)
-        self.b3 = self.width_start(self.b1)
-        self.c_thr = self.absolute_velocity_throat(self.cu1)
-        self.a_thr = self.area_throat(self.flow, self.c_thr)
-        self.b_vl = self.width_volute_vane(self.a_thr, self.theta_3)
+        r3 = self.radius_start(d1)
+        b3 = self.width_start(b1)
+        c_thr = self.absolute_velocity_throat(cu1)
+        a_thr = self.area_throat(flow, c_thr)
+        b_vl = self.width_volute_vane(a_thr, theta_3)
+
+        self.results = locals()
 
 
 def main(**kwargs):
     """Print results."""
-    project = Project(**kwargs)
+    prj = Project(**kwargs)
 
-    for k, v in sorted(list(globals().items())):
+    for k, v in sorted(list(prj.results.items())):
         if type(v) in (float, int, list):
             print(k, ' ', v)
-
-    list_val = project.__dict__.items()  # list of tuples [(k, v)]
-    for i in sorted(list_val, key=lambda list_val: list_val[0]):  # sort by k
-        if type(i[1]) is list:
-            t = []
-            for j in i[1]:
-                if type(j) is tuple:
-                    t.append(tuple(round(k, 5) for k in j))
-                elif type(j) is float:
-                    t.append(round(j, 5))
-            print(i[0], ' ', t)
-        else:
-            print(i[0], ' ', round(i[1], 5))
 
 
 if __name__ == '__main__':
     main(flow=.011, head=25,  # [m^3/s], [m]
          slip=3, hz=50,  # slip and utility frequency for electric motor
-        #  psi_coef=[.50, .55, .69],  # head coef. for diff. couple poles
-        #  phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
-        #  eta_coef=[.88, .76, .73],  # efficency for diff. couple poles
-         cps=4,  # the chosen couple poles for electric motor
          tau_adm=30,  # tau admissible for C40 steel [MPa]
          thk=.003,  # blade thickness [m]
          lm=.04,  # loss coefficient at section 0
