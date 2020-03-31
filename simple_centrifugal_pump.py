@@ -786,10 +786,7 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
 
         :param flow (float): flow rate [m^3/s]
         :param head (float) head [m]
-        :param psi_coef (list): head coefficients
-        :param phi_coef (list): head coefficients
-        :param eta_coef (list): total efficency
-        :param slip (int): slip for electric induction motor [%]
+        :param slip (int): slip of electric induction motor [%]
         :param hz (int):utility frequency [Hz]
         :param tau_adm (int): tau admissible [MPa]
         :param thk (float): blade thickness [m]
@@ -965,9 +962,17 @@ def main(**kwargs):
     """Print results."""
     prj = Project(**kwargs)
 
-    for k, v in sorted(list(prj.results.items())):
-        if type(v) in (float, int, list):
-            print(k, ' ', v)
+    for key, val in sorted(list(prj.results.items())):
+        if type(val) in (float, int, list):
+            if type(val) == list:
+                for k, v in enumerate(val):
+                    if type(v) == tuple:
+                        val[k] = tuple(round(t, 3) for t in v)
+                    else:
+                        val[k] = round(v, 3)
+                print(key, ' ', val)
+            else:
+                print(key, ' ', round(val, 3))
 
 
 if __name__ == '__main__':
