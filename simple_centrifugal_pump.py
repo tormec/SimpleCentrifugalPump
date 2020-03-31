@@ -13,7 +13,7 @@ import math
 G = 9.81  # gravity acceleration [m/s^2]
 RHO = 1000  # water density
 
-# couple ploes for electric motor
+# couple poles for electric motor
 CPOLES = [2, 4, 6, 8]
 
 # internal diameters for commercial pipes
