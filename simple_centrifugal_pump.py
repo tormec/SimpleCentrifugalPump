@@ -47,7 +47,9 @@ class Pre_Values(object):
         k_num = []
         for n in rpm:
             omega = 2 * math.pi * n / 60
-            k_num.append(omega * flow**0.5 / (G * head)**0.75)
+            k = omega * flow**0.5 / (G * head)**0.75
+            if 0.2 <= k <= 1.2:
+                k_num.append(k)
 
         return k_num
 
@@ -103,7 +105,7 @@ class Pre_Values(object):
         """
         eta_coef = []
         for k in k_num:
-            eta_poly = - 0.2774 + 3.0137016 * k - 1.7473193 ** k**2
+            eta_poly = - 0.2774 + 3.0137016 * k - 1.7473193 * k**2
             eta_coef.append(eta_poly)
 
         return eta_coef
@@ -808,9 +810,9 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         """
         self.flow = kwargs["flow"]
         self.head = kwargs["head"]
-        self.fs_psi = kwargs["psi_coef"]
-        self.fs_phi = kwargs["phi_coef"]
-        self.fs_eta = kwargs["eta_coef"]
+        # self.fs_psi = kwargs["psi_coef"]
+        # self.fs_phi = kwargs["phi_coef"]
+        # self.fs_eta = kwargs["eta_coef"]
         self.slip = kwargs["slip"]
         self.hz = kwargs["hz"]
         self.cps = kwargs["cps"]
@@ -829,6 +831,9 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         # feasability study
         self.fs_rpm = self.rotational_speed(self.slip, self.hz)
         self.fs_k_num = self.type_number(self.fs_rpm, self.flow, self.head)
+        self.fs_phi = self.phi_k(self.fs_k_num)
+        self.fs_psi = self.psi_k(self.fs_k_num)
+        self.fs_eta = self.eta_k(self.fs_k_num)
         self.fs_u1 = self._circumferential_velocity_1(self.head, self.fs_psi)
         self.fs_d1 = self._diameter_1(self.fs_u1, self.fs_rpm)
         self.fs_b1 = self._width_1(self.fs_u1, self.fs_d1, self.flow,
@@ -961,15 +966,15 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
 
 
 def main(**kwargs):
-    """Execute test and print results."""
-    test = Project(**kwargs)
+    """Print results."""
+    project = Project(**kwargs)
 
     for k, v in sorted(list(globals().items())):
         if type(v) in (float, int, list):
             print(k, ' ', v)
 
-    l = test.__dict__.items()  # list of tuples [(k, v)]
-    for i in sorted(l, key=lambda l: l[0]):  # sort by k
+    list_val = project.__dict__.items()  # list of tuples [(k, v)]
+    for i in sorted(list_val, key=lambda list_val: list_val[0]):  # sort by k
         if type(i[1]) is list:
             t = []
             for j in i[1]:
@@ -985,9 +990,9 @@ def main(**kwargs):
 if __name__ == '__main__':
     main(flow=.011, head=25,  # [m^3/s], [m]
          slip=3, hz=50,  # slip and utility frequency for electric motor
-         psi_coef=[.50, .55, .69],  # head coef. for diff. couple poles
-         phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
-         eta_coef=[.88, .76, .73],  # efficency for diff. couple poles
+        #  psi_coef=[.50, .55, .69],  # head coef. for diff. couple poles
+        #  phi_coef=[.13, .09, .08],  # flow coef. for diff. couple poles
+        #  eta_coef=[.88, .76, .73],  # efficency for diff. couple poles
          cps=4,  # the chosen couple poles for electric motor
          tau_adm=30,  # tau admissible for C40 steel [MPa]
          thk=.003,  # blade thickness [m]
