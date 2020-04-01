@@ -223,7 +223,7 @@ class Shaft(object):
         :param tau_adm (int): tau admissible [MPa]
         :return d_sh (float): shaft diameter [m]
         """
-        d_sh = ((32 * torq) / (math.pi * (tau_adm * 10**6)))**(1/3)
+        d_sh = ((64 * torq) / (math.pi * (tau_adm * 10**6)))**(1/3)
 
         return d_sh
 
