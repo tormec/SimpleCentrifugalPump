@@ -46,7 +46,7 @@ class Pre_Values(object):
         return omega
 
     def type_number(self, rpm, flow, head):
-        """Calculate centrifugal pump's typical number.
+        """Calculate centrifugal pump"s typical number.
 
         :param rpm (float): rotational speed [rpm]
         :param flow (float): flow rate [m^3/s]
@@ -85,7 +85,7 @@ class Pre_Values(object):
         return cp
 
     def flow_number(self, k_num):
-        """Calculate value of flow number for a given pump's typical number.
+        """Calculate value of flow number for a given pump"s typical number.
 
         The polynomial has been calculated applaying the curve fitting at nodes
         k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -101,7 +101,7 @@ class Pre_Values(object):
         return phi
 
     def head_number(self, k_num):
-        """Calculate value of head number for a given pump's typical number.
+        """Calculate value of head number for a given pump"s typical number.
 
         The polynomial has been calculated applaying the curve fitting at nodes
         k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -117,7 +117,7 @@ class Pre_Values(object):
         return psi
 
     def efficency(self, k_num):
-        """Calculate value of efficency for a given pump's typical number.
+        """Calculate value of efficency for a given pump"s typical number.
 
         The polynomial has been calculated applaying the curve fitting at nodes
         k_num       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -687,7 +687,7 @@ class Impeller(object):
         return phi_th
 
     def slip_factor(self, u1, beta_1c, z):
-        """Calculate slip factor at section 1 with Wiesner's formula.
+        """Calculate slip factor at section 1 with Wiesner"s formula.
 
         :param u1 (float): circumferential velocity [m/s]
         :param beta_1c (float): angle between rel. and circum. velocity [m/s]
@@ -817,6 +817,8 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         theta_3 = kwargs["theta_3"]
 
         # feasability study
+        pre_vals = "---feasability study---"
+        fs_cp = []
         fs_rpm = []
         fs_k_num = []
         fs_phi = []
@@ -832,6 +834,7 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
             k_num = self.type_number(rpm, flow, head)
             # allow typical numbers only in the domain of centrifugal pumps
             if 0.2 <= k_num <= 1.2:
+                fs_cp.append(cp)
                 fs_rpm.append(rpm)
                 fs_k_num.append(k_num)
                 fs_phi.append(self.flow_number(k_num))
@@ -854,6 +857,7 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
             k_num = max(k_num)
 
         # project values
+        prj_vals = "---project values---"
         rpm = self.k2n(k_num, flow, head)
         cp = self.n2cp(rpm, slip, hz)
         phi = self.flow_number(k_num)
@@ -866,6 +870,7 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         npsh_r = self.npsh_r(k_num, head)
 
         # pump shaft design
+        shaft = "---pump shaft design---"
         omega = self.angular_velocity(rpm)
         powr = self.power(eta, flow, head)
         torq = self.torque(powr, omega)
@@ -873,6 +878,7 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         d_hu = self.diameter_hub(d_sh)
 
         # impeller design
+        impeller = "---impeller design---"
         dif = 1
         err = .001
         u1 = [u1]
@@ -949,6 +955,7 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         x2 = x2[-1]
 
         # volute design
+        volute = "---volute design---"
         r3 = self.radius_start(d1)
         b3 = self.width_start(b1)
         c_thr = self.absolute_velocity_throat(cu1)
@@ -962,20 +969,22 @@ def main(**kwargs):
     """Print results."""
     prj = Project(**kwargs)
 
-    for key, val in sorted(list(prj.results.items())):
-        if type(val) in (float, int, list):
+    for key, val in list(reversed(list(prj.results.items()))):
+        if type(val) in (float, int, list, str):
             if type(val) == list:
                 for k, v in enumerate(val):
                     if type(v) == tuple:
                         val[k] = tuple(round(t, 3) for t in v)
                     else:
                         val[k] = round(v, 3)
-                print(key, ' ', val)
+                print(key, " ", val)
+            elif type(val) in (float, int):
+                print(key, " ", round(val, 3))
             else:
-                print(key, ' ', round(val, 3))
+                print(val)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(flow=.011, head=25,  # [m^3/s], [m]
          slip=3, hz=50,  # slip and utility frequency for electric motor
          tau_adm=30,  # tau admissible for C40 steel [MPa]
