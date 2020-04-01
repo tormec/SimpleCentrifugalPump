@@ -2,6 +2,7 @@
 """Calculation of geometrical dimensions for centrifugal pump."""
 
 import math
+import calc
 
 # name sections
 # 0: impeller eye
@@ -223,19 +224,9 @@ class Shaft(object):
         :param tau_adm (int): tau admissible [MPa]
         :return d_sh (float): shaft diameter [m]
         """
-        d_sh = ((64 * torq) / (math.pi * (tau_adm * 10**6)))**(1/3)
+        d_sh = ((32 * torq) / (math.pi * (tau_adm * 10**6)))**(1/3)
 
         return d_sh
-
-    def diameter_hub(self, d_sh):
-        """Calculate hub diameter.
-
-        :param d_sh (float): shaft diameter [m]
-        :return d_hu (float): hub diameter [m]
-        """
-        d_hu = 1.5 * d_sh
-
-        return d_hu
 
 
 class Impeller(object):
@@ -875,7 +866,9 @@ class Project(Pre_Values, Shaft, Impeller, Volute):
         powr = self.power(eta, flow, head)
         torq = self.torque(powr, omega)
         d_sh = self.diameter_shaft(torq, tau_adm)
-        d_hu = self.diameter_hub(d_sh)
+        d_hu = calc.bisect(lambda d_hu, d_sh=d_sh:
+                           (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
+                           d_sh - 1, d_sh + 1, .001)
 
         # impeller design
         impeller = "---impeller design---"
