@@ -1,2 +1,4 @@
 # ignore directory and its content
 __pycache__
+# ignore these files
+*.json
