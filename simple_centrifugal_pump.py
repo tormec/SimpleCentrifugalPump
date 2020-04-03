@@ -4,13 +4,6 @@
 import math
 import calc
 
-# abbreviation in function names
-# abs: absolute
-# diam: diameter
-# num: number
-# rad: radius
-# vel: velocity
-
 # name sections
 # 0: impeller eye
 # 1: impeller blade trailing edge
@@ -140,12 +133,12 @@ class Options(object):
 
         return eta
 
-    def _circumferential_velocity_1(self, head, psi):
-        """Calculate circumferential velocity at section 1.
+    def _peripheral_velocity_1(self, head, psi):
+        """Calculate peripheral velocity at section 1.
 
         :param head (float): head [m]
         :param psi (float): head number
-        :return u1 (float): circumferential velocity [m/s]
+        :return u1 (float): peripheral velocity [m/s]
         """
         u1 = (G * head / psi)**0.5
 
@@ -154,7 +147,7 @@ class Options(object):
     def _diameter_1(self, u1, rpm):
         """Calculate diameter at section 1.
 
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param rpm (float): rotational speed [rpm]
         :return d1 (float): diameter [m]
         """
@@ -165,7 +158,7 @@ class Options(object):
     def _width_1(self, u1, d1, flow, phi):
         """Calculate impeller width at section 1.
 
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param d1 (float): diameter [m]
         :param flow (float): flow rate [m^3/s]
         :param phi (float): flow number
@@ -175,7 +168,7 @@ class Options(object):
 
         return b1
 
-    def width_over_diameter_1(self, b1, d1):
+    def width_diameter_1(self, b1, d1):
         """Calculate rate width over diameter at section 1.
 
         :param b1 (float): impeller width [m]
@@ -218,20 +211,20 @@ class Shaft(object):
 
         :param power (float): power [W]
         :param omega (float): angular velocity [rad/s]
-        :return torq (float): torque [Nm]
+        :return torque (float): torque [Nm]
         """
-        torq = power / omega
+        torque = power / omega
 
-        return torq
+        return torque
 
-    def diameter_shaft(self, torq, tau_adm):
+    def shaft_diameter(self, torque, tau_adm):
         """Calculate shaft diameter.
 
-        :param torq (float): torque [Nm]
+        :param torque (float): torque [Nm]
         :param tau_adm (int): tau admissible [MPa]
         :return d_sh (float): shaft diameter [m]
         """
-        d_sh = ((32 * torq) / (math.pi * (tau_adm * 10**6)))**(1/3)
+        d_sh = ((32 * torque) / (math.pi * (tau_adm * 10**6)))**(1/3)
 
         return d_sh
 
@@ -280,7 +273,7 @@ class Impeller(object):
         """Calculate diameter at section 1.
 
         :param omega (float): angular velocity [rad/s]
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :return d1 (float): diameter [m]
         """
         d1 = 2 * u1 / omega
@@ -423,7 +416,7 @@ class Impeller(object):
         """Calculate impeller width at section 1.
 
         :param d1 (float): diameter [m]
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param phi (float): flow coefficient
         :param flow (float): flow rate [m^3/s]
         :param eta_vol (float): volumetric efficency
@@ -537,49 +530,49 @@ class Impeller(object):
 
         return cm1
 
-    def circumferential_velocity_component_2(self, u2, cm2, beta_2c):
-        """Calculate circumferential velocity component of the absolute
+    def peripheral_velocity_component_2(self, u2, cm2, beta_2c):
+        """Calculate peripheral velocity component of the absolute
         velocity at section 2.
 
-        :param u2 (float): circumferential velocity [m/s]
+        :param u2 (float): peripheral velocity [m/s]
         :param cm2 (float): meridional velocity component [m/s]
         :param beta_2c (float): angle between rel. and circum. velocity [m/s]
-        :return cu2 (float): circumferential velocity component [m/s]
+        :return cu2 (float): peripheral velocity component [m/s]
         """
         cu2 = u2 - cm2 * 1 / math.tan(beta_2c)
 
         return cu2
 
-    def circumferential_velocity_component_1(self, u1, cm1, beta_1c):
-        """Calculate circumferential velocity component of the absolute
+    def peripheral_velocity_component_1(self, u1, cm1, beta_1c):
+        """Calculate peripheral velocity component of the absolute
         velocity at section 1.
 
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param cm1 (float): meridional velocity component [m/s]
         :param beta_1c (float): angle between rel. and circum. velocity [m/s]
-        :return cu1 (float): circumferential velocity component [m/s]
+        :return cu1 (float): peripheral velocity component [m/s]
         """
         cu1 = u1 - cm1 * 1 / math.tan(beta_1c)
 
         return cu1
 
-    def circumferential_velocity_2(self, omega, d2):
-        """Calculate circumferential velocity at section 2.
+    def peripheral_velocity_2(self, omega, d2):
+        """Calculate peripheral velocity at section 2.
 
         :param omega (float): angular velocity [rad/s]
         :param d2 (float): measured diameter
-        :return u2 (float): circumferential velocity [m/s]
+        :return u2 (float): peripheral velocity [m/s]
         """
         u2 = omega * d2 / 2
 
         return u2
 
-    def circumferential_velocity_1(self, omega, d1):
-        """Calculate circumferential velocity at section 1.
+    def peripheral_velocity_1(self, omega, d1):
+        """Calculate peripheral velocity at section 1.
 
         :param omega (float): angular velocity [rad/s]
         :param d1 (float): diameter [m]
-        :return u1 (float): circumferential velocity [m/s]
+        :return u1 (float): peripheral velocity [m/s]
         """
         u1 = omega * d1 / 2
 
@@ -608,11 +601,11 @@ class Impeller(object):
         return w1
 
     def angle_beta_2c(self, cm2, u2, gamma_2):
-        """Calculate blade working angle between relative and circumferential
+        """Calculate blade working angle between relative and peripheral
         velocity at section 2.
 
         :param cm2 (float): meridional velocity [m/s]
-        :param u2 (float): circumferential velocity [m/s]
+        :param u2 (float): peripheral velocity [m/s]
         :param gamma_2 (int): measured angle between cm2 and vertical [deg]
         :return beta_2c (float): angle between rel. and circum. velocity [m/s]
         """
@@ -622,13 +615,13 @@ class Impeller(object):
         return beta_2c
 
     def angle_beta_1c(self, psi_th, phi_th, u1_sf, u1):
-        """Calculate blade working angle between relative and circumferential
+        """Calculate blade working angle between relative and peripheral
         velocity at section 1.
 
         :param psi_th (float): theoretic head coefficient
         :param phi_th (float): flow coefficient corrected
         :param u1_sf (float): slip factor [m/s]
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :return beta_1c (float): angle between rel. and circum. velocity [m/s]
         """
         beta_1c = math.atan(phi_th / (1 - psi_th - u1_sf / u1))
@@ -638,7 +631,7 @@ class Impeller(object):
     def head_coefficient(self, u1, head):
         """Calculate head coefficient at section 1.
 
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param head (float): head [m]
         :return psi (float): head coefficient
         """
@@ -651,7 +644,7 @@ class Impeller(object):
 
         :param d1 (float): diameter [m]
         :param b1 (float): impeller width [m]
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param x1 (float): blade blockage
         :param flow (float): flow rate [m^3/s]
         :param eta_vol (float): volumetric efficency
@@ -687,7 +680,7 @@ class Impeller(object):
     def slip_factor(self, u1, beta_1c, z):
         """Calculate slip factor at section 1 with Wiesner"s formula.
 
-        :param u1 (float): circumferential velocity [m/s]
+        :param u1 (float): peripheral velocity [m/s]
         :param beta_1c (float): angle between rel. and circum. velocity [m/s]
         :param z (int): number of blades
         :return u1_sf (float): slip factor [m/s]
@@ -711,12 +704,12 @@ class Impeller(object):
 
 
 class Volute(object):
-    """Volute design."""
+    """Methods to calculate the volute."""
 
     def absolute_velocity_throat(self, cu1):
         """Calculate absolute velocity at throat section.
 
-        :param cu1 (float): circumferential velocity component [m/s]
+        :param cu1 (float): peripheral velocity component [m/s]
         :return c_thr (float): absolute velocity [m/s]
         """
         c_thr = .5 * cu1
@@ -846,10 +839,10 @@ class Project(Options, Shaft, Impeller, Volute):
                 phi.append(self.flow_number(k))
                 psi.append(self.head_number(k))
                 eta.append(self.efficency(k))
-                u1.append(self._circumferential_velocity_1(self.head, psi[i]))
+                u1.append(self._peripheral_velocity_1(self.head, psi[i]))
                 d1.append(self._diameter_1(u1[i], rpm[i]))
                 b1.append(self._width_1(u1[i], d1[i], self.flow, phi[i]))
-                bd1.append(self.width_over_diameter_1(b1[i], d1[i]))
+                bd1.append(self.width_diameter_1(b1[i], d1[i]))
                 npsh_r.append(self.npsh_r(k, self.head))
 
         results = {}
@@ -875,10 +868,10 @@ class Project(Options, Shaft, Impeller, Volute):
         phi = self.flow_number(k_num)
         psi = self.head_number(k_num)
         eta = self.efficency(k_num)
-        u1 = self._circumferential_velocity_1(self.head, psi)
+        u1 = self._peripheral_velocity_1(self.head, psi)
         d1 = self._diameter_1(u1, rpm)
         b1 = self._width_1(u1, d1, self.flow, phi)
-        bd1 = self.width_over_diameter_1(b1, d1)
+        bd1 = self.width_diameter_1(b1, d1)
         npsh_r = self.npsh_r(k_num, self.head)
 
         results = {}
@@ -896,14 +889,14 @@ class Project(Options, Shaft, Impeller, Volute):
         part = "---pump shaft---"
         omega = self.angular_velocity(rpm)
         power = self.power(eta, self.flow, self.head)
-        torq = self.torque(power, omega)
-        d_sh = self.diameter_shaft(torq, self.tau_adm)
+        torque = self.torque(power, omega)
+        d_sh = self.shaft_diameter(torque, self.tau_adm)
         d_hu = calc.bisect(lambda d_hu, d_sh=d_sh:
                            (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
                            d_sh - 1, d_sh + 1, .001)
 
         results = {}
-        for i in ["part", "omega", "power", "torq", "d_sh", "d_hu"]:
+        for i in ["part", "omega", "power", "torque", "d_sh", "d_hu"]:
             results[i] = locals()[i]
 
         return results
@@ -922,7 +915,7 @@ class Project(Options, Shaft, Impeller, Volute):
         while dif > err:
             d1 = self.diameter_1(omega, u1[-1])
             d1 = round(d1 * 1000) / 1000
-            u1.append(self.circumferential_velocity_1(omega, d1))
+            u1.append(self.peripheral_velocity_1(omega, d1))
             dif = abs(u1[-1] - u1[-2])
         u1 = u1[-1]
 
@@ -971,7 +964,7 @@ class Project(Options, Shaft, Impeller, Volute):
             x1.append(self.blade_blockage_1(beta_1c, d1, self.thk, self.z))
             cm1 = self.meridional_velocity_component_1(b1, d1, x1[-1],
                                                        self.flow, self.eta_vol)
-            cu1 = self.circumferential_velocity_component_1(u1, cm1,  beta_1c)
+            cu1 = self.peripheral_velocity_component_1(u1, cm1,  beta_1c)
             w1 = self.relative_velocity_1(cm1, beta_1c)
             if len(x1) > 2:
                 dif = abs(x1[-1] - x1[-2])
@@ -983,11 +976,11 @@ class Project(Options, Shaft, Impeller, Volute):
         while dif > err:
             theta_2 = self.angle_theta_2(d_int, r_mid, self.d2)
             b2 = self.width_2(a0, a1, r_mid, l_mid, theta_2, self.d2)
-            u2 = self.circumferential_velocity_2(omega, self.d2)
+            u2 = self.peripheral_velocity_2(omega, self.d2)
             cm2 = self.meridional_velocity_component_2(b2, self.d2, x2[-1],
                                                        self.flow, self.eta_vol)
             beta_2c = self.angle_beta_2c(cm2, u2, self.gamma_2)
-            cu2 = self.circumferential_velocity_component_2(u2, cm2, beta_2c)
+            cu2 = self.peripheral_velocity_component_2(u2, cm2, beta_2c)
             w2 = self.relative_velocity_2(cm2, beta_2c)
             x2.append(self.blade_blockage_2(beta_2c, self.thk, self.z,
                                             self.d2))

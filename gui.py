@@ -161,11 +161,11 @@ class Gui(tk.Frame):
 
         fs_rpm = scp_pre.rotational_speed(self.slip, self.hz)
         fs_k_num = scp_pre.type_number(self.fs_rpm, self.flow, self.head)
-        fs_u1 = scp_pre._circumferential_velocity_1(self.head, self.fs_psi)
+        fs_u1 = scp_pre._peripheral_velocity_1(self.head, self.fs_psi)
         fs_d1 = scp_pre._diameter_1(self.fs_u1, self.fs_rpm)
         fs_b1 = scp_pre._width_1(self.fs_u1, self.fs_d1, self.flow,
                                  self.fs_phi)
-        fs_bd1 = scp_pre.width_over_diameter_1(self.fs_b1, self.fs_d1)
+        fs_bd1 = scp_pre.width_diameter_1(self.fs_b1, self.fs_d1)
         fs_npsh_r = scp_pre.npsh_r(self.fs_k_num, self.head)
 
         values = zip(self.fs_cpoles, self.fs_rpm, self.fs_k_num, self.fs_psi,
