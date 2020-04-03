@@ -292,10 +292,9 @@ class Impeller(object):
         :param eta_vol (float): volumetric efficency
         :return d0_npsh (float): diameter with min npsh_r [m]
         """
-        d0_npsh = 2 * (
-                       (2 * flow**2 * km**2 * (1 + lm + lw)) /
+        d0_npsh = 2 * ((2 * flow**2 * km**2 * (1 + lm + lw)) /
                        (eta_vol**2 * math.pi**2 * omega**2 * x0**2 * lw)
-                      )**(1/6)
+                       )**(1/6)
 
         return d0_npsh
 
@@ -309,41 +308,44 @@ class Impeller(object):
         :param eta_vol (float): volumetric efficency
         :return d0_eff (float): diameter with max efficency [m]
         """
-        d0_eff = 2 * (
-                      (2 * flow**2 * km**2) /
-                      (eta_vol**2 * math.pi**2 * omega**2 * x0**2)
-                     )**(1/6)
+        d0_eff = 2 * ((2 * flow**2 * km**2) /
+                      (eta_vol**2 * math.pi**2 * omega**2 * x0**2))**(1/6)
 
         return d0_eff
 
-    def diameter_0_compromise(self, omega, x0, flow, eta_vol):
-        """Calculate diameter at section 0 as compromise solution between
-        min npsh_r and max total efficency.
+    def diameter_0_flow(self, omega, x0, flow, eta_vol):
+        """Calculate diameter at section 0 as function of the flow rate.
 
         :param omega (float): angular velocity [rad/s]
         :param x0 (float): hub blockage
         :param flow (float): flow rate [m^3/s]
         :param eta_vol (float): volumetric efficency
         :param eta_vol (float): volumetric efficency
-        :return d0_cmp (float): diameter as compromise solution [m]
+        :return d0_flow (float): diameter as function of the flow rate [m]
         """
-        d0_cmp = (
-                 (flow * 8 * 3.03) /
-                 (omega * math.pi * x0 * eta_vol)
-                 )**(1/3)
+        d0_flow = ((flow * 8 * 3.03) / (omega * math.pi * x0 * eta_vol))**(1/3)
 
-        return d0_cmp
+        return d0_flow
 
-    def diameter_0(self, d0_npsh, d0_eff, d0_cmp):
-        """Calculate diameter at section 0 according to standard diameters.
+    def diameter_0_avg(self, d0_npsh, d0_eff, d0_flow):
+        """Calculate diameter at section 0 as average value.
 
         :param d0_npsh (float): diameter with min NPSH_r [m]
         :param d0_eff (float): diameter with max efficency [m]
-        :param d0_cmp (float): diameter as compromise solution [m]
+        :param d0_flow (float): diameter as function of the flow rate [m]
+        :return d0_avg (float): diameter as average value [m]
+        """
+        d0_vals = [d0_npsh, d0_eff, d0_flow]
+        d0_avg = math.fsum(d0_vals) / len(d0_vals)
+
+        return d0_avg
+
+    def diameter_0(self, d0_avg):
+        """Calculate diameter at section 0 according to standard diameters.
+
+        :param d0_avg (float): diameter as average value [m]
         :return d0 (float): diameter [m]
         """
-        d0_val = [d0_npsh, d0_eff, d0_cmp]
-        d0_avg = math.fsum(d0_val) / len(d0_val)
         dif_abs = []
         for i in range(len(D_INT)):
             dif_abs.append(abs(D_INT[i] - d0_avg))
@@ -930,9 +932,10 @@ class Project(Options, Shaft, Impeller, Volute):
                                            self.eta_vol)
             d0_eff = self.diameter_0_efficency(omega, x0[-1], self.flow,
                                                self.km, self.eta_vol)
-            d0_cmp = self.diameter_0_compromise(omega, x0[-1], self.flow,
-                                                self.eta_vol)
-            d0 = self.diameter_0(d0_npsh, d0_eff, d0_cmp)
+            d0_flow = self.diameter_0_flow(omega, x0[-1], self.flow,
+                                           self.eta_vol)
+            d0_avg = self.diameter_0_avg(d0_npsh, d0_eff, d0_flow)
+            d0 = self.diameter_0(d0_avg)
             x0.append(self.hub_blockage_0(d0, d_hu))
             if len(x0) > 2:
                 dif = abs(x0[-1] - x0[-2])
@@ -990,7 +993,7 @@ class Project(Options, Shaft, Impeller, Volute):
 
         results = {}
         for i in ["part", "d1", "u1", "psi",
-                  "d0_npsh", "d0_eff", "d0_cmp", "d0", "x0",
+                  "d0_npsh", "d0_eff", "d0_flow", "d0_avg", "d0", "x0",
                   "d_mid", "r_cvt", "d_int", "r_mid", "l_mid", "a0",
                   "b1", "phi", "a1", "b_im", "psi_th", "phi_th", "beta_1c",
                   "epsilon_r", "u1_sf", "x1", "cm1", "cu1", "w1",
@@ -1045,7 +1048,7 @@ if __name__ == "__main__":
          thk=.003,  # blade thickness [m]
          lm=.04,  # loss coefficient at section 0
          lw=.50,  # low-pressure peak coefficient at blades at section 0
-         km=1.2,  # rate between circumeferential velocity cm2 and c0
+         km=1.2,  # rate between peripheral velocity cm2 and c0
          eta_vol=.940,  # volumetric efficency
          eta_hyd=.88,  # idraulic efficency
          d2=.112,  # measured diameter [m]
