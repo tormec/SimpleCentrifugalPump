@@ -5,12 +5,12 @@ import constants as CNST
 class Options(object):
     """Methods to calculate several design options of an impeller."""
 
-    def rotational_speed(self, slip, hz, pp):
+    def rotational_speed(self, pp, slip, hz):
         """Calculate rotational speed at different pole pairs of an AC motor.
 
+        :param pp (int): pole pairs of an AC motor
         :param slip (int): slip factor [%]
         :param hz (int): utility frequency [Hz]
-        :param pp (int): pole pairs of an AC motor
         :return rpm (float): rotational speed [rpm]
         """
         rpm = 120 * hz / pp * (1 - slip / 100)
@@ -113,14 +113,14 @@ class Options(object):
 
         return eta
 
-    def peripheral_velocity(self, head, psi):
+    def peripheral_velocity(self, psi, head):
         """Calculate peripheral velocity function of the head number.
 
-        :param head (float): head [m]
         :param psi (float): head number
+        :param head (float): head [m]
         :return u (float): peripheral velocity [m/s]
         """
-        u = (CONST.G * head / psi)**0.5
+        u = (CNST.G * head / psi)**0.5
 
         return u
 
@@ -135,20 +135,20 @@ class Options(object):
 
         return d
 
-    def width(self, u, d, flow, phi):
+    def width(self, u, d, phi, flow):
         """Calculate impeller width function of the flow number.
 
         :param u (float): peripheral velocity [m/s]
         :param d (float): diameter [m]
-        :param flow (float): flow rate [m^3/s]
         :param phi (float): flow number
+        :param flow (float): flow rate [m^3/s]
         :return b (float): impeller width [m]
         """
         b = flow / (math.pi * d * u * phi)
 
         return b
 
-    def widthOdiameter(self, b, d):
+    def width0diameter(self, b, d):
         """Calculate rate width over diameter.
 
         :param b (float): impeller width [m]
