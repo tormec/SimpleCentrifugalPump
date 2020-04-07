@@ -248,19 +248,19 @@ class Project(object):
 
     def calc_volute(self, **kwargs):
         """Calculate the volute."""
-        d1 = kwargs["d1"]
-        b1 = kwargs["b1"]
-        cu1 = kwargs["cu1"]
+        d_1 = kwargs["d_1"]
+        b_1 = kwargs["b_1"]
+        c_1_u = kwargs["c_1_u"]
 
         part = "---volute---"
-        r3 = self.radius_start(d1)
-        b3 = self.width_start(b1)
-        c_thr = self.absolute_velocity_throat(cu1)
-        a_thr = self.area_throat(self.flow, c_thr)
-        b_vl = self.width_volute_vane(a_thr, self.theta_3)
+        r_3 = vlt.radius_start(d_1)
+        b_3 = vlt.width_start(b_1)
+        c_thr = vlt.absolute_velocity_throat(c_1_u)
+        a_thr = vlt.area_throat(self.flow, c_thr)
+        b_vl = vlt.width_volute_vane(a_thr, self.theta_3)
 
         results = {}
-        for i in ["part", "r3", "b3", "c_thr", "a_thr", "b_vl"]:
+        for i in ["part", "r_3", "b_3", "c_thr", "a_thr", "b_vl"]:
             results[i] = locals()[i]
 
         return results
