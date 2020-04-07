@@ -3,7 +3,6 @@
 
 import calc
 import constants as CNST
-import options as opt
 import shaft as shf
 import impeller as imp
 import volute as vlt
@@ -13,7 +12,6 @@ import volute as vlt
 # 1: impeller blade trailing edge
 # 2: impeller blade leading edge
 # 3: volute start wrap angle
-
 
 
 class Project(object):
@@ -77,21 +75,21 @@ class Project(object):
         bd_1 = []
         npsh_r = []
         for i, p in enumerate(CNST.PPAIRS):
-            n = opt.rotational_speed(p, self.slip, self.hz)
-            k = opt.type_number(n, self.flow, self.head)
+            n = shf.rotational_speed(p, self.slip, self.hz)
+            k = imp.type_number(shf.angular_velocity(n), self.flow, self.head)
             # only typical numbers in the domain of centrifugal pumps
             if 0.2 <= k <= 1.2:
                 pp.append(p)
                 rpm.append(n)
                 cappa.append(k)
-                phi.append(opt.flow_number(k))
-                psi.append(opt.head_number(k))
-                eta.append(opt.efficency(k))
-                u_1.append(opt.peripheral_velocity(psi[i], self.head))
-                d_1.append(opt.diameter(u_1[i], rpm[i]))
-                b_1.append(opt.width(u_1[i], d_1[i], phi[i], self.flow))
-                bd_1.append(opt.width0diameter(b_1[i], d_1[i]))
-                npsh_r.append(opt.npsh_r(k, self.head))
+                phi.append(imp.flow_number_poly(k))
+                psi.append(imp.head_number_poly(k))
+                eta.append(imp.efficency_poly(k))
+                u_1.append(imp.blade_vel_psi(psi[i], self.head))
+                d_1.append(imp.diameter_rpm(u_1[i], rpm[i]))
+                b_1.append(imp.width_phi(u_1[i], d_1[i], phi[i], self.flow))
+                bd_1.append(imp.width0diameter(b_1[i], d_1[i]))
+                npsh_r.append(imp.npsh_req(k, self.head))
 
         results = {}
         for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta", "u_1",
@@ -111,16 +109,16 @@ class Project(object):
                 cappa.remove(k)
         if len(cappa) > 0:
             cappa = max(cappa)
-        rpm = opt.cappa2rpm(cappa, self.flow, self.head)
-        pp = opt.rpm2pp(rpm, self.slip, self.hz)
-        phi = opt.flow_number(cappa)
-        psi = opt.head_number(cappa)
-        eta = opt.efficency(cappa)
-        u_1 = opt.peripheral_velocity(psi, self.head)
-        d_1 = opt.diameter(u_1, rpm)
-        b_1 = opt.width(u_1, d_1, phi, self.flow)
-        bd_1 = opt.width0diameter(b_1, d_1)
-        npsh_r = opt.npsh_r(cappa, self.head)
+        rpm = imp.cappa2rpm(cappa, self.flow, self.head)
+        pp = imp.rpm2pp(rpm, self.slip, self.hz)
+        phi = imp.flow_number_poly(cappa)
+        psi = imp.head_number_poly(cappa)
+        eta = imp.efficency_poly(cappa)
+        u_1 = imp.blade_vel_psi(psi, self.head)
+        d_1 = imp.diameter_rpm(u_1, rpm)
+        b_1 = imp.width_phi(u_1, d_1, phi, self.flow)
+        bd_1 = imp.width0diameter(b_1, d_1)
+        npsh_r = imp.npsh_req(cappa, self.head)
 
         results = {}
         for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta", "u_1",
@@ -135,7 +133,7 @@ class Project(object):
         eta = kwargs["eta"]
 
         part = "---pump shaft---"
-        omega = shf.angular_velocity(rpm)
+        omega = opt.angular_velocity(rpm) # ???????
         power = shf.power(eta, self.flow, self.head)
         torque = shf.torque(power, omega)
         d_sh = shf.shaft_diameter(torque, self.tau_adm)
@@ -161,87 +159,87 @@ class Project(object):
         err = .001
         u_1 = [u_1]
         while dif > err:
-            d_1 = shf.diameter_omega(omega, u_1[-1])
+            d_1 = imp.diameter_omega(omega, u_1[-1])
             d_1 = round(d_1 * 1000) / 1000
-            u_1.append(shf.blade_vel(omega, d_1))
+            u_1.append(imp.blade_vel(omega, d_1))
             dif = abs(u_1[-1] - u_1[-2])
         u_1 = u_1[-1]
 
-        psi = shf.head_number(u_1, self.head)
+        psi = imp.head_number(u_1, self.head)
 
         dif = 1
         err = .001
         x_0 = [1]
         while dif > err:
-            d_0_npsh = shf.diameter_npsh(omega, x_0[-1], self.flow,
+            d_0_npsh = imp.diameter_npsh(omega, x_0[-1], self.flow,
                                          self.lm, self.lw, self.km,
                                          self.eta_vol)
-            d_0_eff = shf.diameter_efficency(omega, x_0[-1], self.flow,
+            d_0_eff = imp.diameter_efficency(omega, x_0[-1], self.flow,
                                              self.km, self.eta_vol)
-            d_0_flow = shf.diameter_flow(omega, x_0[-1], self.flow,
+            d_0_flow = imp.diameter_flow(omega, x_0[-1], self.flow,
                                          self.eta_vol)
-            d_0_avg = shf.average_diam(d_0_npsh, d_0_eff, d_0_flow)
-            d_0 = shf.standard_diam(d_0_avg)
-            x_0.append(self.hub_blockage(d_0, d_hu))
+            d_0_avg = imp.average_diam(d_0_npsh, d_0_eff, d_0_flow)
+            d_0 = imp.standard_diam(d_0_avg)
+            x_0.append(imp.hub_blockage(d_0, d_hu))
             if len(x_0) > 2:
                 dif = abs(x_0[-1] - x_0[-2])
         x_0 = x_0[-1]
 
-        d_mid = shf.streamline_diam(d_hu, d_0)
-        r_cvt = shf.curvature_rad(d_1)
-        r_mid = shf.streamline_rad(d_hu, d_0, r_cvt)
-        l_mid = shf.streamline_len(r_cvt, r_mid, d_1, d_0)
-        a_0 = shf.area_0(d_hu, d_0)
+        d_mid = imp.streamline_diam(d_hu, d_0)
+        r_cvt = imp.curvature_rad(d_1)
+        r_mid = imp.streamline_rad(d_hu, d_0, r_cvt)
+        l_mid = imp.streamline_len(r_cvt, r_mid, d_1, d_0)
+        a_0 = imp.area_0(d_hu, d_0)
 
         dif = 1
         err = .001
         x_1 = [1]
         u_1_sf = 0
         while dif > err:
-            b_1 = shf.width_1(d_1, u_1, phi, x_1[-1], self.flow, self.eta_vol)
+            b_1 = imp.width_1(d_1, u_1, phi, x_1[-1], self.flow, self.eta_vol)
             b_1 = round(b_1 * 1000) / 1000
-            phi = shf.flow_coefficient(d_1, b_1, u_1, x_1[-1], self.flow,
-                                       self.eta_vol)
-            a_1 = shf.area_1(d_1, b_1, x_1[-1])
-            psi_th = shf.theoretic_head_number(psi, self.eta_hyd)
-            phi_th = shf.theoretic_flow_number(phi, x_1[-1], self.eta_vol)
-            beta_1_c = shf.angle_beta_1c(psi_th, phi_th, u_1_sf, u_1)
-            epsilon_ract = shf.degree_reaction(phi_th, beta_1_c, self.z)
-            u_1_sf = shf.slip_factor(u_1, beta_1_c, self.z)
-            x_1.append(shf.blade_blockage(beta_1_c, d_1, self.thk, self.z))
-            c_1_m = shf.meridional_abs_vel(b_1, d_1, x_1[-1], self.flow,
+            phi = imp.flow_number(d_1, b_1, u_1, x_1[-1], self.flow,
+                                  self.eta_vol)
+            a_1 = imp.area_1(d_1, b_1, x_1[-1])
+            psi_th = imp.theoretic_head_number(psi, self.eta_hyd)
+            phi_th = imp.theoretic_flow_number(phi, x_1[-1], self.eta_vol)
+            beta_1_c = imp.angle_beta_1c(psi_th, phi_th, u_1_sf, u_1)
+            epsilon_ract = imp.degree_reaction(phi_th, beta_1_c, self.z)
+            u_1_sf = imp.slip_factor(u_1, beta_1_c, self.z)
+            x_1.append(imp.blade_blockage(beta_1_c, d_1, self.thk, self.z))
+            c_1_m = imp.meridional_abs_vel(b_1, d_1, x_1[-1], self.flow,
                                            self.eta_vol)
-            c_1_u = shf.circumferential_abs_vel(u_1, c_1_m,  beta_1_c)
-            w_1 = shf.relative_velocity_1(c_1_m, beta_1_c)
+            c_1_u = imp.circumferential_abs_vel(u_1, c_1_m,  beta_1_c)
+            w_1 = imp.relative_vel(c_1_m, beta_1_c)
             if len(x_1) > 2:
                 dif = abs(x_1[-1] - x_1[-2])
         x_1 = x_1[-1]
 
-        dif = 1
-        err = .001
-        x_2 = [1]
-        while dif > err:
-            theta_2 = shf.angle_theta_2(r_cvt, r_mid, d_1, d_0, d_2)
-            b_2 = shf.width_2(a_0, a_1, r_mid, l_mid, theta_2, d_2)
-            u_2 = shf.blade_vel(omega, d_2)
-            c_2_m = shf.meridional_abs_vel(b_2, d_2, x_2[-1], self.flow,
-                                           self.eta_vol)
-            beta_2_c = shf.angle_beta_2c(c_2_m, u_2, self.gamma_2)
-            c_2_u = shf.circumeferential_abs_vel(u_2, c_2_m, beta_2_c)
-            w_2 = shf.relative_vel(c_2_m, beta_2_c)
-            x_2.append(shf.blade_blockage(beta_2_c, d_2, self.thk, self.z))
-            if len(x_2) > 2:
-                dif = abs(x_2[-1] - x_2[-2])
-        x_2 = x_2[-1]
+        # dif = 1
+        # err = .001
+        # x_2 = [1]
+        # while dif > err:
+        #     theta_2 = imp.angle_theta_2(r_cvt, r_mid, d_1, d_0, d_2)
+        #     b_2 = imp.width_2(a_0, a_1, r_mid, l_mid, theta_2, d_2)
+        #     u_2 = imp.blade_vel(omega, d_2)
+        #     c_2_m = imp.meridional_abs_vel(b_2, d_2, x_2[-1], self.flow,
+        #                                    self.eta_vol)
+        #     beta_2_c = imp.angle_beta_2c(c_2_m, u_2, self.gamma_2)
+        #     c_2_u = imp.circumeferential_abs_vel(u_2, c_2_m, beta_2_c)
+        #     w_2 = imp.relative_vel(c_2_m, beta_2_c)
+        #     x_2.append(imp.blade_blockage(beta_2_c, d_2, self.thk, self.z))
+        #     if len(x_2) > 2:
+        #         dif = abs(x_2[-1] - x_2[-2])
+        # x_2 = x_2[-1]
 
         results = {}
         for i in ["part", "d_1", "u_1", "psi",
                   "d_0_npsh", "d_0_eff", "d_0_flow", "d_0_avg", "d_0", "x_0",
                   "d_mid", "r_cvt", "l_mid", "a_0",
                   "b_1", "phi", "a_1", "psi_th", "phi_th", "beta_1_c",
-                  "epsilon_ract", "u_1_sf", "x_1", "c_1_m", "c_1_u", "w_1",
-                  "theta_2", "b_2", "u_2", "c_2_m", "beta_2_c", "c_2_u", "w_2",
-                  "x_2"]:
+                  "epsilon_ract", "u_1_sf", "x_1", "c_1_m", "c_1_u", "w_1",]:
+                #   "theta_2", "b_2", "u_2", "c_2_m", "beta_2_c", "c_2_u", "w_2",
+                #   "x_2"]:
             results[i] = locals()[i]
 
         return results
