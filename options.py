@@ -82,7 +82,7 @@ class Options(object):
         return phi
 
     def head_number(self, cappa):
-        """Calculate value of head number for a given pump's typical number.
+        """Calculate head number for a given pump's typical number.
 
         The polynomial has been calculated applaying the curve fitting at nodes
         cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -98,7 +98,7 @@ class Options(object):
         return psi
 
     def efficency(self, cappa):
-        """Calculate value of efficency for a given pump's typical number.
+        """Calculate efficency for a given pump's typical number.
 
         The polynomial has been calculated applaying the curve fitting at nodes
         cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2

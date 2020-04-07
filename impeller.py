@@ -16,7 +16,7 @@ class Impeller(object):
 
         return x
 
-    def blade_blockage_1(self, beta_c, d, thk, z):
+    def blade_blockage(self, beta_c, d, thk, z):
         """Calculate blade blockage.
 
         :param beta_c (float): angle between rel. and blade velocity [m/s]
@@ -86,7 +86,7 @@ class Impeller(object):
 
         return d_flow
 
-    def diameter_avg(self, d_npsh, d_eff, d_flow):
+    def average_diam(self, d_npsh, d_eff, d_flow):
         """Calculate diameter as average value.
 
         :param d_npsh (float): diameter with min NPSH_r [m]
@@ -99,7 +99,7 @@ class Impeller(object):
 
         return d_avg
 
-    def diameter_std(self, d):
+    def standard_diam(self, d):
         """Calculate diameter according to standard diameters.
 
         :param d (float): diameter [m]
@@ -117,67 +117,77 @@ class Impeller(object):
         """Calculate middle streamline diameter at section 0.
 
         :param d_hu (float): hub diameter [m]
-        :param d (float): diameter [m]
+        :param d_0 (float): diameter at section 0 [m]
         :return d_mid (float): middle streamline diameter [m]
         """
         d_mid = (d_0 + d_hu) / 2
 
         return d_mid
 
-    def curvature_rad_shroud(self, d_1):
+    def curvature_rad(self, d_1):
         """Calculate curvature radius of the shroud at section 0.
 
-        :param d1 (float): diameter [m]
+        :param d_1 (float): diameter [m]
         :return r_cvt (float): curvature radius [m]
         """
         r_cvt = .06 * d_1
 
         return r_cvt
 
-    def streamline_len(self, r_cvt, d_hu, d_1, d_0):
-        """Calculate length mean streamline.
+    def streamline_rad(self, d_hu, d_0, r_cvt):
+        """Calculate curvature radius of the middle streamline at section 0.
+
+        :param d_hu (float): hub diameter [m]
+        :param d_0 (float): diameter at section 0 [m]
+        :param r_cvt (float): curvature radius [m]
+        :return r_mid (float): streamline radius [m]
+        """
+        r_mid = (d_0 - d_hu) / 4 + r_cvt
+
+        return r_mid
+
+    def streamline_len(self, r_cvt, r_mid, d_1, d_0):
+        """Calculate length middle streamline.
 
         :param r_cvt (float): curvature radius [m]
-        :param d_hub (float): hub diameter [m]
+        :param r_mid (float): streamline radius [m]
         :param d_1 (float): diameter at section 1 [m]
         :param d_0 (float): diameter at section 0 [m]
         :return l_mid (float): middle streamline length [m]
         """
-        l_mid = math.pi / 2 * ((d_0 - d_hu) / 4 + r_cvt) +\
-            (d_1 - d_0 - 2 * r_cvt) / 2
+        l_mid = math.pi / 2 * r_mid + (d_1 - d_0 - 2 * r_cvt) / 2
 
         return l_mid
 
-    def angle_theta_2(self, r_cvt, d_hu, d_1, d_0, d_2):
+    def angle_theta_2(self, r_cvt, r_mid, d_1, d_0, d_2):
         """Calculate angle between radius middle streamline and vertical axis
         at section 2.
 
         :param r_cvt (float): curvature radius [m]
-        :param d_hub (float): hub diameter [m]
+        :param r_mid (float): streamline radius [m]
         :param d_1 (float): diameter at section 1 [m]
         :param d_0 (float): diameter at section 0 [m]
         :param d_2 (float): diameter at section 2 [m]
         :return theta_2 (float): angle between streamline rad. and vert. [rad]
         """
-        theta_2 = math.acos((d_1 - d_0 - 2 * r_cvt - d_2) /
-                            (2 * ((d_0 - d_hu) / 4 + r_cvt)))
+        theta_2 = math.acos((d_1 - d_0 - 2 * r_cvt - d_2) / (2 * r_mid))
 
         return theta_2
 
-    def width_2(self, a0, a1, r_mid, l_mid, theta_2, d2):
+    def width_2(self, a_0, a_1, r_mid, l_mid, theta_2, d_2):
         """Calculate impeller width at section 2.
 
-        :param a0 (float): area [m^2]
-        :param a1 (float): area [m^2]
+        :param a_0 (float): area at section 0 [m^2]
+        :param a_1 (float): area at section 1 [m^2]
         :param r_mid (float): radius mean streamline [m]
         :param l_mid (float): length mean streamline [m]
-        :param theta_2 (float): angle between radius m. stream. and vert. [rad]
-        :param d2 (float): measured diameter
-        :return b2 (float): impeller width [m]
+        :param theta_2 (float): angle between streamline rad. and vert. [rad]
+        :param d_2 (float): diameter at section 2 [m]
+        :return b_2 (float): impeller width at section 2[m]
         """
-        b2 = (a0 + (a1 - a0) * (r_mid * theta_2) / l_mid) / (math.pi * d2)
+        b_2 = (a_0 + (a_1 - a_0) * (r_mid * theta_2) / l_mid) / (math.pi * d_2)
 
-        return b2
+        return b_2
 
     def width_1(self, d_1, u_1, phi, x_1, flow, eta_vol):
         """Calculate impeller width at section 1.
@@ -189,9 +199,9 @@ class Impeller(object):
         :param eta_vol (float): volumetric efficency
         :return b_1 (float): impeller width at section 1
         """
-        b1 = flow / (math.pi * d_1 * u_1 * phi * x_1 * eta_vol)
+        b_1 = flow / (math.pi * d_1 * u_1 * phi * x_1 * eta_vol)
 
-        return b1
+        return b_1
 
     def area_0(self, d_hu, d_0):
         """Calculate area at section 0.
@@ -294,7 +304,7 @@ class Impeller(object):
         return w
 
     def angle_beta_2c(self, cm2, u2, gamma_2):
-        """Calculate blade working angle between relative and peripheral
+        """Calculate blade working angle between relative and blade
         velocity at section 2.
 
         :param cm2 (float): meridional velocity [m/s]
