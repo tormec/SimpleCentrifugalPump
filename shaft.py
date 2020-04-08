@@ -1,7 +1,7 @@
 """Methods to calculate the pump shaft."""
 
 import math
-import constants as CNST
+import constants as CN
 
 
 def rotational_speed(pp, slip, hz):
@@ -36,7 +36,7 @@ def power(eta_tot, flow, head):
     :param head (float): head [m]
     :return power (float): power [W]
     """
-    power = (CNST.RHO * flow * CNST.G * head) / eta_tot
+    power = (CN.RHO * flow * CN.G * head) / eta_tot
 
     return power
 
