@@ -1,7 +1,7 @@
 """Methods to calculate the impeller."""
 
 import math
-import constants as CNST
+import constants as CN
 
 
 def type_number(omega, flow, head):
@@ -12,7 +12,7 @@ def type_number(omega, flow, head):
     :param head (float): head [m]
     :return cappa (float): typical number
     """
-    cappa = omega * flow**0.5 / (CNST.G * head)**0.75
+    cappa = omega * flow**0.5 / (CN.G * head)**0.75
 
     return cappa
 
@@ -25,7 +25,7 @@ def cappa2rpm(cappa, flow, head):
     :param head (float): head [m]
     :return rpm (float): rotational speed [rpm]
     """
-    omega = cappa * (CNST.G * head)**0.75 / flow**0.5
+    omega = cappa * (CN.G * head)**0.75 / flow**0.5
     rpm = omega * 60 / (2 * math.pi)
 
     return rpm
@@ -102,7 +102,7 @@ def blade_vel_psi(psi, head):
     :param head (float): head [m]
     :return u (float): peripheral velocity [m/s]
     """
-    u_psi = (CNST.G * head / psi)**0.5
+    u_psi = (CN.G * head / psi)**0.5
 
     return u_psi
 
@@ -265,76 +265,81 @@ def standard_diam(d):
     :return d_std (float): standard diameter [m]
     """
     dif_abs = []
-    for i in range(len(CNST.D_INT)):
-        dif_abs.append(abs(CNST.D_INT[i] - d))
+    for i in range(len(CN.D_INT)):
+        dif_abs.append(abs(CN.D_INT[i] - d))
     dif_min = min(dif_abs)
-    d_std = CNST.D_INT[dif_abs.index(dif_min)]
+    d_std = CN.D_INT[dif_abs.index(dif_min)]
 
     return d_std
 
 
-def streamline_diam(d_hu, d_0):
-    """Calculate middle streamline diameter at section 0.
+def streamline_diam(d_hu, d_0, theta=None, r_slc=None):
+    """Calculate middle streamline diameter at a given angle.
 
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
-    :return d_mid (float): middle streamline diameter [m]
+    :param theta (float): angle vertical axis and streamline curv. radius [rad]
+    :param r_slc (float): streamline curvature radius [m]
+    :return d_sl (float): middle streamline diameter [m]
     """
-    d_mid = (d_0 + d_hu) / 2
+    d_sl = (d_0 + d_hu) / 2 + r_slc * (1 - math.cos(theta))
 
-    return d_mid
+    return d_sl
 
 
 def curvature_rad(d_1):
     """Calculate curvature radius of the shroud at section 0.
 
-    :param d_1 (float): diameter [m]
-    :return r_cvt (float): curvature radius [m]
+    :param d_1 (float): diameter at section 1 [m]
+    :return r_c (float): curvature radius [m]
     """
-    r_cvt = .06 * d_1
+    r_c = .06 * d_1
 
-    return r_cvt
+    return r_c
 
 
-def streamline_rad(d_hu, d_0, r_cvt):
-    """Calculate curvature radius of the middle streamline at section 0.
+def streamline_curv_rad(d_hu, d_0, r_c):
+    """Calculate middle streamline curvature radius.
 
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
-    :param r_cvt (float): curvature radius [m]
-    :return r_mid (float): streamline radius [m]
+    :param r_c (float): curvature radius [m]
+    :return r_slc (float): streamline curvature radius [m]
     """
-    r_mid = (d_0 - d_hu) / 4 + r_cvt
+    r_slc = (d_0 - d_hu) / 4 + r_c
 
-    return r_mid
+    return r_slc
 
 
-def streamline_len(r_cvt, r_mid, d_1, d_0):
+def streamline_len(r_slc, d_1=None, d_sl=None, theta=None):
     """Calculate length middle streamline.
 
-    :param r_cvt (float): curvature radius [m]
-    :param r_mid (float): streamline radius [m]
+    :param r_slc (float): streamline curvature radius [m]
     :param d_1 (float): diameter at section 1 [m]
-    :param d_0 (float): diameter at section 0 [m]
+    :param d_sl (float): middle streamline diameter [m]
+    :param theta (float): angle vertical axis and streamline curv. radius [rad]
     :return l_mid (float): middle streamline length [m]
     """
-    l_mid = math.pi / 2 * r_mid + (d_1 - d_0 - 2 * r_cvt) / 2
+    if theta:
+        l_sl = r_slc * theta
+    else:
+        l_sl = math.pi / 2 * r_slc + (d_1 - d_sl - 2 * r_slc) / 2
 
-    return l_mid
+    return l_sl
 
 
-def angle_theta_2(r_cvt, r_mid, d_1, d_0, d_2):
+def angle_theta_2(r_cvsl, r_mid, d_1, d_0, d_2):
     """Calculate angle between radius middle streamline and vertical axis
     at section 2.
 
-    :param r_cvt (float): curvature radius [m]
+    :param r_cvsl (float): curvature radius [m]
     :param r_mid (float): streamline radius [m]
     :param d_1 (float): diameter at section 1 [m]
     :param d_0 (float): diameter at section 0 [m]
     :param d_2 (float): diameter at section 2 [m]
     :return theta_2 (float): angle between streamline rad. and vert. [rad]
     """
-    theta_2 = math.acos((d_1 - d_0 - 2 * r_cvt - d_2) / (2 * r_mid))
+    theta_2 = math.acos((d_1 - d_0 - 2 * r_cvsl - d_2) / (2 * r_mid))
 
     return theta_2
 
@@ -370,29 +375,22 @@ def width_1(d_1, u_1, phi, x_1, flow, eta_vol):
     return b_1
 
 
-def area_0(d_hu, d_0):
-    """Calculate area at section 0.
+def area(l_isl, d_hu=None, d_0=None, d_1=None, b_1=None, x_1=None, l_sl=None):
+    """Calculate impeller vane area at i-section along the middle streamline.
 
+    :param l_isl (float): middle streamline length at i-section [m]
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
-    :return a0 (float): area [m^2]
+    :param d_1 (float): diameter at section 1 [m]
+    :param b_1 (list): impeller width at section 1 [m]
+    :param x_1 (float): blade blockage at section 1
+    :return a_i (float): area at i-section
     """
     a_0 = (d_0**2 - d_hu**2) * math.pi / 4
+    a_1 = math.pi * d_1 * b_1 * x_1
+    a_i = a_0 + (a_1 - a_0) * l_isl / l_sl
 
-    return a_0
-
-
-def area_1(d1, b1, x1):
-    """Calculate area at section 1.
-
-    :param d1 (float): diameter [m]
-    :param b1 (list): impeller width [m]
-    :param x1 (float): blade blockage
-    :return a1 (float): area [m^2]
-    """
-    a1 = math.pi * d1 * b1 * x1
-
-    return a1
+    return a_i
 
 
 def width_impeller_vane(r_mid, l_mid, d_int, a0, a1):
@@ -514,7 +512,7 @@ def head_number(u, head):
     :param head (float): head [m]
     :return psi (float): head coefficient
     """
-    psi = (CNST.G * head) / u**2
+    psi = (CN.G * head) / u**2
 
     return psi
 
