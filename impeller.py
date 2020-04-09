@@ -140,7 +140,7 @@ def head_number(u, head):
 
     :param u (float): absolute velocity [m/s]
     :param head (float): head [m]
-    :return psi (float): head coefficient
+    :return psi (float): head number
     """
     psi = (CN.G * head) / u**2
 
@@ -148,11 +148,11 @@ def head_number(u, head):
 
 
 def theoretic_head_number(psi, eta_hyd):
-    """Calculate theoretic head coefficient.
+    """Calculate theoretic head number.
 
-    :param psi (float): head coefficient
+    :param psi (float): head number
     :param eta_hyd (float): hydraulic efficency
-    :return psi_th (float): theoretic head coefficient
+    :return psi_th (float): theoretic head number
     """
     psi_th = psi / eta_hyd
 
@@ -319,7 +319,9 @@ def streamline_diam(d_hu, d_0, theta=None, r_slc=None):
     :param r_slc (float): streamline curvature radius [m]
     :return d_sl (float): middle streamline diameter [m]
     """
-    d_sl = (d_0 + d_hu) / 2 + r_slc * (1 - math.cos(theta))
+    d_sl = (d_0 + d_hu) / 2
+    if theta:
+        d_sl = d_sl + r_slc * (1 - math.cos(theta))
 
     return d_sl
 
@@ -347,7 +349,7 @@ def streamline_len(r_slc, d_1=None, d_sl=None, theta=None):
     :return l_mid (float): middle streamline length [m]
     """
     if theta:
-        l_sl = r_slc * theta
+        l_sl = theta * r_slc
     else:
         l_sl = math.pi / 2 * r_slc + (d_1 - d_sl - 2 * r_slc) / 2
 
@@ -370,14 +372,14 @@ def diameter2theta(r_cvsl, r_mid, d_1, d_0, d_2):
     return theta_2
 
 
-def width(d, u, phi, flow, x=None, eta_vol=None):
+def width(d, u, phi, flow, x=1, eta_vol=1):
     """Calculate impeller width.
 
     :param d (float): diameter [m]
     :param u (float): blade velocity [m/s]
     :param phi (float): flow coefficient
     :param flow (float): flow rate [m^3/s]
-    : param x (float): blade blockage
+    :param x (float): blade blockage
     :param eta_vol (float): volumetric efficency
     :return b (float): impeller width
     """
@@ -386,7 +388,7 @@ def width(d, u, phi, flow, x=None, eta_vol=None):
     return b
 
 
-def area(l_isl, d_hu=None, d_0=None, d_1=None, b_1=None, x_1=None, l_sl=None):
+def area(l_isl, d_hu=1, d_0=1, d_1=1, b_1=1, x_1=1, l_sl=1):
     """Calculate impeller vane area at i-section along the middle streamline.
 
     :param l_isl (float): middle streamline length at i-section [m]
@@ -417,14 +419,14 @@ def angle_theta(n, i):
 
 
 def meridional_abs_vel(b, d, x, flow, eta_vol):
-    """Calculate meridional velocity component of the absolute velocity.
+    """Calculate meridional component of the absolute velocity.
 
     :param b (float): impeller width [m]
     :param d (float): diameter [m]
     :param x (float): blade blockage
     :param flow (float): flow rate [m^3/s]
     :param eta_vol (float): volumetric efficency
-    :return c_m (float): meridional velocity component [m/s]
+    :return c_m (float): meridional component of the abs. vel. [m/s]
     """
     c_m = flow / (math.pi * d * b * x * eta_vol)
 
@@ -432,29 +434,41 @@ def meridional_abs_vel(b, d, x, flow, eta_vol):
 
 
 def circumferential_abs_vel(u, c_m, beta_c):
-    """Calculate circumferential velocity component of the absolute
-    velocity.
+    """Calculate circumferential component of the absolute velocity.
 
     :param u (float): absolute velocity [m/s]
     :param c_m (float): meridional velocity component [m/s]
     :param beta_c (float): angle between rel. and blade velocity [m/s]
-    :return c_u (float): absolute velocity component [m/s]
+    :return c_u (float): circumferential component of the abs. vel. [m/s]
     """
     c_u = u - c_m * 1 / math.tan(beta_c)
 
     return c_u
 
 
-def blade_vel_psi(psi, head):
-    """Calculate blade velocity function of the head number.
+def psi_th2c_u(psi_th, u_1):
+    """Calculate circumferential component of the absolute velocity for a
+    given theoretic head number.
+
+    :param psi_th (float): theoretic head number
+    :param u_1 (float): blade velocity at section 1 [m/s]
+    :return c_u (float): circumferential component of the abs. vel. [m/s]
+    """
+    c_1u = psi_th * u_1
+
+    return c_1u
+
+
+def psi2u(psi, head):
+    """Calculate blade velocity for a given head number.
 
     :param psi (float): head number
     :param head (float): head [m]
     :return u (float): blade velocity [m/s]
     """
-    u_psi = (CN.G * head / psi)**0.5
+    u = (CN.G * head / psi)**0.5
 
-    return u_psi
+    return u
 
 
 def blade_vel(omega, d):
