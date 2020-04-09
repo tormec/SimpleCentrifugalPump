@@ -370,22 +370,6 @@ def diameter2theta(r_cvsl, r_mid, d_1, d_0, d_2):
     return theta_2
 
 
-def width_2(a_0, a_1, r_mid, l_mid, theta_2, d_2):
-    """Calculate impeller width at section 2.
-
-    :param a_0 (float): area at section 0 [m^2]
-    :param a_1 (float): area at section 1 [m^2]
-    :param r_mid (float): radius mean streamline [m]
-    :param l_mid (float): length mean streamline [m]
-    :param theta_2 (float): angle between streamline rad. and vert. [rad]
-    :param d_2 (float): diameter at section 2 [m]
-    :return b_2 (float): impeller width at section 2[m]
-    """
-    b_2 = (a_0 + (a_1 - a_0) * (r_mid * theta_2) / l_mid) / (math.pi * d_2)
-
-    return b_2
-
-
 def width(d, u, phi, flow, x=None, eta_vol=None):
     """Calculate impeller width.
 
@@ -420,7 +404,7 @@ def area(l_isl, d_hu=None, d_0=None, d_1=None, b_1=None, x_1=None, l_sl=None):
     return a_i
 
 
-def theta(n, i):
+def angle_theta(n, i):
     """Calculate angle at i-section along middle streamline.
 
     :param n (int): num. of divisions of the impeller vane curved line
@@ -430,35 +414,6 @@ def theta(n, i):
     theta = i * math.pi / (2 * n)
 
     return theta
-
-
-def width_impeller_vane(r_mid, l_mid, d_int, a0, a1):
-    """Calculate width impeller vane as different diameters
-    at equals angles in the curved zone.
-
-    :param r_mid (float): radius mean streamline [m]
-    :param l_mid (float): length mean streamline [m]
-    :param d_int (float): center radius curvature front shroud [m]
-    :param a0 (float): area [m^2]
-    :param a1 (float): area [m^2]
-    :return b_im (list): diameters at equals angles in the curved zone [m]
-    """
-    # in the curved zone, the mean streamline is a quarter of arc of circle
-    # and along its path are considered:
-    n = 11  # num. divisions: points = segments + 1
-    theta = []  # cumulative angles
-    length = []  # cumulative lengths
-    area = []  # area at different lengths
-    r = []  # radius at different angles
-    b_im = []
-    for i in range(n):
-        theta.append((math.pi / (2 * n)) * i)
-        length.append(r_mid * theta[i])
-        area.append(a0 + (a1 - a0) * length[i] / l_mid)
-        r.append(d_int / 2 - r_mid * math.cos(theta[i]))
-        b_im.append(area[i] / (2 * math.pi * r[i]))
-
-    return list(zip(theta, length, area, r, b_im))
 
 
 def meridional_abs_vel(b, d, x, flow, eta_vol):
@@ -491,11 +446,11 @@ def circumferential_abs_vel(u, c_m, beta_c):
 
 
 def blade_vel_psi(psi, head):
-    """Calculate peripheral velocity function of the head number.
+    """Calculate blade velocity function of the head number.
 
     :param psi (float): head number
     :param head (float): head [m]
-    :return u (float): peripheral velocity [m/s]
+    :return u (float): blade velocity [m/s]
     """
     u_psi = (CN.G * head / psi)**0.5
 
@@ -526,38 +481,24 @@ def relative_vel(c_m, beta_c):
     return w
 
 
-def angle_beta_2c(cm2, u2, gamma_2):
-    """Calculate blade working angle between relative and blade
-    velocity at section 2.
+def angle_beta(c_m, u, gamma, c_u=None, u_sf=None):
+    """Calculate blade construction angle between rel. and blade velocity vect.
 
-    :param cm2 (float): meridional velocity [m/s]
-    :param u2 (float): absolute velocity [m/s]
-    :param gamma_2 (int): measured angle between cm2 and vertical [deg]
-    :return beta_2c (float): angle between rel. and circum. velocity [m/s]
+    :param c_m (float): meridional component of the abs. velocity [m/s]
+    :param u (float): blade velocity [m/s]
+    :param gamma (float): angle between meridional abs. vel. and vertical [deg]
+    :param c_u (float): circumferential component of the abs. velocity [m/s]
+    :param u_sf (float): slip factor
+    :return beta (float): angle between rel. and blade velocity vectors [rad]
     """
-    gammar_2 = math.radians(gamma_2)
-    beta_2c = math.atan((cm2 * math.cos(gammar_2)) / u2)
+    gamma = math.radians(gamma)
+    beta = math.atan(c_m * math.cos(gamma) / (u * (1 - u_sf / u) - c_u))
 
-    return beta_2c
-
-
-def angle_beta_1c(psi_th, phi_th, u_1sf, u_1):
-    """Calculate blade working angle between relative and blade
-    velocity at section 1.
-
-    :param psi_th (float): theoretic head coefficient
-    :param phi_th (float): flow coefficient corrected
-    :param u_1sf (float): slip factor at section 1 [m/s]
-    :param u_1 (float): absolute velocity at section 1 [m/s]
-    :return beta_1c (float): angle between rel. and blade velocity [m/s]
-    """
-    beta_1c = math.atan(phi_th / (1 - psi_th - u_1sf / u_1))
-
-    return beta_1c
+    return beta
 
 
 def slip_factor(u, beta_c, z):
-    """Calculate slip factor with Wiesner"s formula.
+    """Calculate slip factor with Wiesner's formula.
 
     :param u (float): absolute velocity [m/s]
     :param beta_c (float): angle between rel. and blade velocity [m/s]
