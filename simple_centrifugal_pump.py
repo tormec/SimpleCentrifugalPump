@@ -57,8 +57,8 @@ class Project(object):
         choice = self.chose_option(**options)
         shaft = self.calc_shaft(**choice)
         impeller = self.calc_impeller(**{**choice, **shaft})
-        volute = self.calc_volute(**impeller)
-        self.results = [options, choice, shaft, impeller, volute]
+        # volute = self.calc_volute(**impeller)
+        self.results = [options, choice, shaft, impeller] #, volute]
 
     def calc_options(self):
         """Calculate several design options of an impeller."""
@@ -155,9 +155,9 @@ class Project(object):
         d_hu = kwargs["d_hu"]
 
         part = "---impeller---"
+        u_1 = [u_1]
         dif = 1
         err = .001
-        u_1 = [u_1]
         while dif > err:
             d_1 = im.diameter_omega(omega, u_1[-1])
             d_1 = round(d_1 * 1000) / 1000
@@ -167,9 +167,9 @@ class Project(object):
 
         psi = im.head_number(u_1, self.head)
 
+        x_0 = [1]
         dif = 1
         err = .001
-        x_0 = [1]
         while dif > err:
             d_0npsh = im.diameter_npsh(omega, x_0[-1], self.flow, self.lm,
                                        self.lw, self.km, self.eta_vol)
@@ -191,11 +191,11 @@ class Project(object):
         psi = im.head_number(u_1, self.head)
         psi_th = im.theoretic_head_number(psi, self.eta_hyd)
 
-        dif = 1
-        err = .001
         c_1u = [im.psi_th2c_u(psi_th, u_1)]
         x_1 = 1
         u_1sf = 0
+        dif = 1
+        err = .001
         while dif > err:
             b_1 = im.width(d_1, u_1, phi, self.flow, x_1, self.eta_vol)
             b_1 = round(b_1 * 1000) / 1000
@@ -213,32 +213,35 @@ class Project(object):
             dif = abs(c_1u[-1] - c_1u[-2])
         c_1u = c_1u[-1]
 
-        n = 11
+        n = 10
+        theta_i = []
         l_isl = []
+        b_i = []
         c_im = []
-        for i in range(n):
+        for i in range(1, n):
+            theta_i.append(im.angle_theta(n, i))
+            l_isl.append(im.streamline_len(r_slc, theta=theta_i[-1]))
+            d_isl = im.streamline_diam(d_hu, d_0, theta_i[-1], r_slc)
+            u_i = im.blade_vel(omega, d_isl)
+            phi_i = phi
+            psi_i = im.head_number(u_i, self.head)
+            psi_ith = im.theoretic_head_number(psi_i, self.eta_hyd)
+            c_iu = [im.psi_th2c_u(psi_ith, u_i)]
+            x_i = 1
             dif = 1
             err = .001
-            phi_i = phi
-            x_i = [1]
-            c_im = 1
-            c_iu = 0
             while dif > err:
-                theta_i = im.angle_theta(n, i)
-                l_isl = im.streamline_len(r_slc, theta=theta_i)
-                d_isl = im.streamline_diam(d_hu, d_0, theta_i, r_slc)
-                u_i = im.blade_vel(omega, d_isl)
-                b_i = im.width(d_isl, u_i, phi_i, x_i[-1], self.flow,
-                               self.eta_vol)
-                phi_i = im.flow_number(d_isl, b_i, u_i, x_i[-1], self.flow,
+                b = im.width(d_isl, u_i, phi_i, self.flow, x_i, self.eta_vol)
+                phi_i = im.flow_number(d_isl, b, u_i, x_i, self.flow,
                                        self.eta_vol)
-                beta_i = im.angle_beta(c_im. u_i, self.gamma_2, c_iu)
+                c_m = im.meridional_abs_vel(b, d_isl, x_i, self.flow,
+                                            self.eta_vol)
+                beta_i = im.angle_beta(c_m, u_i, 0, c_iu[-1])
                 x_i = im.blade_blockage(beta_i, d_isl, self.thk, self.z)
-                c_im = im.meridional_abs_vel(b_i, d_isl, x_i, self.flow,
-                                             self.eta_vol)
-                c_iu = im.circumferential_abs_vel(u_i, c_im, beta_i)
-            l_isl.append(l_isl)
-            c_im.append(c_im)
+                c_iu.append(im.circumferential_abs_vel(u_i, c_m, beta_i))
+                dif = abs(c_iu[-1] - c_iu[-2])
+            b_i.append(b)
+            c_im.append(c_m)
 
         # dif = 1
         # err = .001
@@ -263,29 +266,29 @@ class Project(object):
                   "d_sl", "r_c", "r_slc", "l_sl", "a_0",
                   "b_1", "phi", "a_1", "psi_th", "phi_th", "beta_1",
                   "epsilon_ract", "u_1sf", "x_1", "c_1m", "c_1u", "w_1",
-                  "l_isl", "c_im"]:
+                  "theta_i", "l_isl", "b_i", "c_im"]:
             results[i] = locals()[i]
 
         return results
 
-    def calc_volute(self, **kwargs):
-        """Calculate the volute."""
-        d_1 = kwargs["d_1"]
-        b_1 = kwargs["b_1"]
-        c_1_u = kwargs["c_1_u"]
+    # def calc_volute(self, **kwargs):
+    #     """Calculate the volute."""
+    #     d_1 = kwargs["d_1"]
+    #     b_1 = kwargs["b_1"]
+    #     c_1_u = kwargs["c_1_u"]
 
-        part = "---volute---"
-        r_3 = vl.radius_start(d_1)
-        b_3 = vl.width_start(b_1)
-        c_thr = vl.absolute_velocity_throat(c_1_u)
-        a_thr = vl.area_throat(self.flow, c_thr)
-        b_vl = vl.width_volute_vane(a_thr, self.theta_3)
+    #     part = "---volute---"
+    #     r_3 = vl.radius_start(d_1)
+    #     b_3 = vl.width_start(b_1)
+    #     c_thr = vl.absolute_velocity_throat(c_1_u)
+    #     a_thr = vl.area_throat(self.flow, c_thr)
+    #     b_vl = vl.width_volute_vane(a_thr, self.theta_3)
 
-        results = {}
-        for i in ["part", "r_3", "b_3", "c_thr", "a_thr", "b_vl"]:
-            results[i] = locals()[i]
+    #     results = {}
+    #     for i in ["part", "r_3", "b_3", "c_thr", "a_thr", "b_vl"]:
+    #         results[i] = locals()[i]
 
-        return results
+    #     return results
 
 
 def main(**kwargs):

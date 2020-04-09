@@ -446,17 +446,17 @@ def circumferential_abs_vel(u, c_m, beta_c):
     return c_u
 
 
-def psi_th2c_u(psi_th, u_1):
+def psi_th2c_u(psi_th, u):
     """Calculate circumferential component of the absolute velocity for a
     given theoretic head number.
 
     :param psi_th (float): theoretic head number
-    :param u_1 (float): blade velocity at section 1 [m/s]
+    :param u (float): blade velocity [m/s]
     :return c_u (float): circumferential component of the abs. vel. [m/s]
     """
-    c_1u = psi_th * u_1
+    c_u = psi_th * u
 
-    return c_1u
+    return c_u
 
 
 def psi2u(psi, head):
@@ -495,7 +495,7 @@ def relative_vel(c_m, beta_c):
     return w
 
 
-def angle_beta(c_m, u, gamma, c_u=None, u_sf=None):
+def angle_beta(c_m, u, gamma, c_u=0, u_sf=0):
     """Calculate blade construction angle between rel. and blade velocity vect.
 
     :param c_m (float): meridional component of the abs. velocity [m/s]
