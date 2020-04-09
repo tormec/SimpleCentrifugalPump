@@ -44,38 +44,15 @@ def rpm2pp(rpm, slip, hz):
     return pp
 
 
-def flow_number_poly(cappa):
-    """Calculate flow number for a given pump's typical number.
+def rpm2omega(rpm):
+    """Calculate angular velocity for a given rotationl speed.
 
-    The polynomial has been calculated applaying the curve fitting at nodes
-    cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    phi         .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
-    weights     ones(cappa)
-    n           2
-
-    :param cappa (float): typical number
-    :return phi (float): flow number
+    :param rpm (float): rotational speed [rpm]
+    :return omega (float): angular velocity [rad/s]
     """
-    phi = 0.0567636 + 0.118979 * cappa - 0.0188811 * cappa**2
+    omega = 2 * math.pi * rpm / 60
 
-    return phi
-
-
-def head_number_poly(cappa):
-    """Calculate head number for a given pump's typical number.
-
-    The polynomial has been calculated applaying the curve fitting at nodes
-    cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    psi         .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
-    weights     ones(cappa)
-    n           2
-
-    :param cappa (float): typical number
-    :return psi (float): head number
-    """
-    psi = 0.5747273 - 0.0864569 * cappa - 0.0687646 * cappa**2
-
-    return psi
+    return omega
 
 
 def efficency_poly(cappa):
@@ -95,42 +72,91 @@ def efficency_poly(cappa):
     return eta
 
 
-def blade_vel_psi(psi, head):
-    """Calculate peripheral velocity function of the head number.
+def flow_number_poly(cappa):
+    """Calculate flow number for a given pump's typical number.
 
-    :param psi (float): head number
-    :param head (float): head [m]
-    :return u (float): peripheral velocity [m/s]
+    The polynomial has been calculated applaying the curve fitting at nodes
+    cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+    phi         .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
+    weights     ones(cappa)
+    n           2
+
+    :param cappa (float): typical number
+    :return phi (float): flow number
     """
-    u_psi = (CN.G * head / psi)**0.5
+    phi = 0.0567636 + 0.118979 * cappa - 0.0188811 * cappa**2
 
-    return u_psi
-
-
-def diameter_rpm(u, rpm):
-    """Calculate diameter function of the rotationl speed.
-
-    :param u (float): peripheral velocity [m/s]
-    :param rpm (float): rotational speed [rpm]
-    :return d (float): diameter [m]
-    """
-    d_rpm = (60 * u) / (math.pi * rpm)
-
-    return d_rpm
+    return phi
 
 
-def width_phi(u, d, phi, flow):
-    """Calculate impeller width function of the flow number.
+def flow_number(d, b, u, x, flow, eta_vol):
+    """Calculate flow number.
 
-    :param u (float): peripheral velocity [m/s]
     :param d (float): diameter [m]
-    :param phi (float): flow number
+    :param b (float): impeller width [m]
+    :param u (float): absolute velocity [m/s]
+    :param x (float): blade blockage
     :param flow (float): flow rate [m^3/s]
-    :return b (float): impeller width [m]
+    :param eta_vol (float): volumetric efficency
+    :return phi (float): flow coefficient
     """
-    b = flow / (math.pi * d * u * phi)
+    phi = flow / (math.pi * d * b * u * x * eta_vol)
 
-    return b
+    return phi
+
+
+def theoretic_flow_number(phi, x, eta_vol):
+    """Calculate theoretic flow coefficient.
+
+    :param phi (float): flow coefficient
+    :param x (float): blade blockage
+    :param eta_vol (float): volumetric efficency
+    :return phi_th (float): flow coefficient corrected
+    """
+    phi_th = phi / (x * eta_vol)
+
+    return phi_th
+
+
+def head_number_poly(cappa):
+    """Calculate head number for a given pump's typical number.
+
+    The polynomial has been calculated applaying the curve fitting at nodes
+    cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+    psi         .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
+    weights     ones(cappa)
+    n           2
+
+    :param cappa (float): typical number
+    :return psi (float): head number
+    """
+    psi = 0.5747273 - 0.0864569 * cappa - 0.0687646 * cappa**2
+
+    return psi
+
+
+def head_number(u, head):
+    """Calculate head number.
+
+    :param u (float): absolute velocity [m/s]
+    :param head (float): head [m]
+    :return psi (float): head coefficient
+    """
+    psi = (CN.G * head) / u**2
+
+    return psi
+
+
+def theoretic_head_number(psi, eta_hyd):
+    """Calculate theoretic head coefficient.
+
+    :param psi (float): head coefficient
+    :param eta_hyd (float): hydraulic efficency
+    :return psi_th (float): theoretic head coefficient
+    """
+    psi_th = psi / eta_hyd
+
+    return psi_th
 
 
 def width0diameter(b, d):
@@ -273,6 +299,17 @@ def standard_diam(d):
     return d_std
 
 
+def curvature_rad(d_1):
+    """Calculate curvature radius of the shroud at section 0.
+
+    :param d_1 (float): diameter at section 1 [m]
+    :return r_c (float): curvature radius [m]
+    """
+    r_c = .06 * d_1
+
+    return r_c
+
+
 def streamline_diam(d_hu, d_0, theta=None, r_slc=None):
     """Calculate middle streamline diameter at a given angle.
 
@@ -285,17 +322,6 @@ def streamline_diam(d_hu, d_0, theta=None, r_slc=None):
     d_sl = (d_0 + d_hu) / 2 + r_slc * (1 - math.cos(theta))
 
     return d_sl
-
-
-def curvature_rad(d_1):
-    """Calculate curvature radius of the shroud at section 0.
-
-    :param d_1 (float): diameter at section 1 [m]
-    :return r_c (float): curvature radius [m]
-    """
-    r_c = .06 * d_1
-
-    return r_c
 
 
 def streamline_curv_rad(d_hu, d_0, r_c):
@@ -328,7 +354,7 @@ def streamline_len(r_slc, d_1=None, d_sl=None, theta=None):
     return l_sl
 
 
-def angle_theta_2(r_cvsl, r_mid, d_1, d_0, d_2):
+def diameter2theta(r_cvsl, r_mid, d_1, d_0, d_2):
     """Calculate angle between radius middle streamline and vertical axis
     at section 2.
 
@@ -360,19 +386,20 @@ def width_2(a_0, a_1, r_mid, l_mid, theta_2, d_2):
     return b_2
 
 
-def width_1(d_1, u_1, phi, x_1, flow, eta_vol):
-    """Calculate impeller width at section 1.
+def width(d, u, phi, flow, x=None, eta_vol=None):
+    """Calculate impeller width.
 
-    :param d_1 (float): diameter at section 1 [m]
-    :param u_1 (float): absolute velocity at section 1 [m/s]
+    :param d (float): diameter [m]
+    :param u (float): blade velocity [m/s]
     :param phi (float): flow coefficient
     :param flow (float): flow rate [m^3/s]
+    : param x (float): blade blockage
     :param eta_vol (float): volumetric efficency
-    :return b_1 (float): impeller width at section 1
+    :return b (float): impeller width
     """
-    b_1 = flow / (math.pi * d_1 * u_1 * phi * x_1 * eta_vol)
+    b = flow / (math.pi * d * u * phi * x * eta_vol)
 
-    return b_1
+    return b
 
 
 def area(l_isl, d_hu=None, d_0=None, d_1=None, b_1=None, x_1=None, l_sl=None):
@@ -391,6 +418,18 @@ def area(l_isl, d_hu=None, d_0=None, d_1=None, b_1=None, x_1=None, l_sl=None):
     a_i = a_0 + (a_1 - a_0) * l_isl / l_sl
 
     return a_i
+
+
+def theta(n, i):
+    """Calculate angle at i-section along middle streamline.
+
+    :param n (int): num. of divisions of the impeller vane curved line
+    :param i (int): section
+    :return theta_i (float): angle [rad]
+    """
+    theta = i * math.pi / (2 * n)
+
+    return theta
 
 
 def width_impeller_vane(r_mid, l_mid, d_int, a0, a1):
@@ -451,6 +490,18 @@ def circumferential_abs_vel(u, c_m, beta_c):
     return c_u
 
 
+def blade_vel_psi(psi, head):
+    """Calculate peripheral velocity function of the head number.
+
+    :param psi (float): head number
+    :param head (float): head [m]
+    :return u (float): peripheral velocity [m/s]
+    """
+    u_psi = (CN.G * head / psi)**0.5
+
+    return u_psi
+
+
 def blade_vel(omega, d):
     """Calculate blade velocity function of angular velocity.
 
@@ -503,59 +554,6 @@ def angle_beta_1c(psi_th, phi_th, u_1sf, u_1):
     beta_1c = math.atan(phi_th / (1 - psi_th - u_1sf / u_1))
 
     return beta_1c
-
-
-def head_number(u, head):
-    """Calculate head number.
-
-    :param u (float): absolute velocity [m/s]
-    :param head (float): head [m]
-    :return psi (float): head coefficient
-    """
-    psi = (CN.G * head) / u**2
-
-    return psi
-
-
-def flow_number(d, b, u, x, flow, eta_vol):
-    """Calculate flow number.
-
-    :param d (float): diameter [m]
-    :param b (float): impeller width [m]
-    :param u (float): absolute velocity [m/s]
-    :param x (float): blade blockage
-    :param flow (float): flow rate [m^3/s]
-    :param eta_vol (float): volumetric efficency
-    :return phi (float): flow coefficient
-    """
-    phi = flow / (math.pi * d * b * u * x * eta_vol)
-
-    return phi
-
-
-def theoretic_head_number(psi, eta_hyd):
-    """Calculate theoretic head coefficient.
-
-    :param psi (float): head coefficient
-    :param eta_hyd (float): hydraulic efficency
-    :return psi_th (float): theoretic head coefficient
-    """
-    psi_th = psi / eta_hyd
-
-    return psi_th
-
-
-def theoretic_flow_number(phi, x, eta_vol):
-    """Calculate theoretic flow coefficient.
-
-    :param phi (float): flow coefficient
-    :param x (float): blade blockage
-    :param eta_vol (float): volumetric efficency
-    :return phi_th (float): flow coefficient corrected
-    """
-    phi_th = phi / (x * eta_vol)
-
-    return phi_th
 
 
 def slip_factor(u, beta_c, z):
