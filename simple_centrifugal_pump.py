@@ -186,21 +186,21 @@ class Project(object):
         r_c = im.curvature_rad(d_1)
         r_slc = im.streamline_curv_rad(d_hu, d_0, r_c)
         l_sl = im.streamline_len(r_slc, d_1, d_sl)
-        a_0 = im.area(0, d_hu, d_0)
+        # a_0 = im.area(0, d_hu, d_0)
 
         psi = im.head_number(u_1, self.head)
         psi_th = im.theoretic_head_number(psi, self.eta_hyd)
 
-        c_1u = [im.psi_th2c_u(psi_th, u_1)]
         x_1 = 1
         u_1sf = 0
         dif = 1
         err = .001
+        c_1u = [im.psi_th2c_u(psi_th, u_1)]
         while dif > err:
             b_1 = im.width(d_1, u_1, phi, self.flow, x_1, self.eta_vol)
             b_1 = round(b_1 * 1000) / 1000
             phi = im.flow_number(d_1, b_1, u_1, x_1, self.flow, self.eta_vol)
-            a_1 = im.area(l_sl, d_1=d_1, b_1=b_1, x_1=x_1, l_sl=l_sl)
+            # a_1 = im.area(l_sl, d_1=d_1, b_1=b_1, x_1=x_1, l_sl=l_sl)
             phi_th = im.theoretic_flow_number(phi, x_1, self.eta_vol)
             c_1m = im.meridional_abs_vel(b_1, d_1, x_1, self.flow,
                                          self.eta_vol)
@@ -213,23 +213,25 @@ class Project(object):
             dif = abs(c_1u[-1] - c_1u[-2])
         c_1u = c_1u[-1]
 
-        n = 10
+        n = 11
         theta_i = []
+        gamma_i = []
         l_isl = []
         b_i = []
         c_im = []
-        for i in range(1, n):
+        for i in range(n):
+            x_i = 1
+            dif = 1
+            err = .001
             theta_i.append(im.angle_theta(n, i))
             l_isl.append(im.streamline_len(r_slc, theta=theta_i[-1]))
             d_isl = im.streamline_diam(d_hu, d_0, theta_i[-1], r_slc)
+            gamma_i.append(im.angle_gamma(r_c, r_slc, theta_i[-1]))
             u_i = im.blade_vel(omega, d_isl)
             phi_i = phi
             psi_i = im.head_number(u_i, self.head)
             psi_ith = im.theoretic_head_number(psi_i, self.eta_hyd)
-            c_iu = [im.psi_th2c_u(psi_ith, u_i)]
-            x_i = 1
-            dif = 1
-            err = .001
+            c_iu = [0]
             while dif > err:
                 b = im.width(d_isl, u_i, phi_i, self.flow, x_i, self.eta_vol)
                 phi_i = im.flow_number(d_isl, b, u_i, x_i, self.flow,
@@ -263,10 +265,10 @@ class Project(object):
         results = {}
         for i in ["part", "d_1", "u_1", "psi",
                   "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0",
-                  "d_sl", "r_c", "r_slc", "l_sl", "a_0",
-                  "b_1", "phi", "a_1", "psi_th", "phi_th", "beta_1",
+                  "d_sl", "r_c", "r_slc", "l_sl",
+                  "b_1", "phi", "psi_th", "phi_th", "beta_1",
                   "epsilon_ract", "u_1sf", "x_1", "c_1m", "c_1u", "w_1",
-                  "theta_i", "l_isl", "b_i", "c_im"]:
+                  "theta_i", "gamma_i", "l_isl", "b_i", "c_im"]:
             results[i] = locals()[i]
 
         return results

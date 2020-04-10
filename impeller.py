@@ -348,11 +348,10 @@ def streamline_len(r_slc, d_1=None, d_sl=None, theta=None):
     :param theta (float): angle vertical axis and streamline curv. radius [rad]
     :return l_mid (float): middle streamline length [m]
     """
-    if theta:
-        l_sl = theta * r_slc
-    else:
+    if theta is None:
         l_sl = math.pi / 2 * r_slc + (d_1 - d_sl - 2 * r_slc) / 2
-
+    else:
+        l_sl = theta * r_slc
     return l_sl
 
 
@@ -404,18 +403,6 @@ def area(l_isl, d_hu=1, d_0=1, d_1=1, b_1=1, x_1=1, l_sl=1):
     a_i = a_0 + (a_1 - a_0) * l_isl / l_sl
 
     return a_i
-
-
-def angle_theta(n, i):
-    """Calculate angle at i-section along middle streamline.
-
-    :param n (int): num. of divisions of the impeller vane curved line
-    :param i (int): section
-    :return theta_i (float): angle [rad]
-    """
-    theta = i * math.pi / (2 * n)
-
-    return theta
 
 
 def meridional_abs_vel(b, d, x, flow, eta_vol):
@@ -493,6 +480,42 @@ def relative_vel(c_m, beta_c):
     w = c_m / math.sin(beta_c)
 
     return w
+
+
+def angle_theta(n, i):
+    """Calculate angle between vertical and middle streamline.
+
+    :param n (int): num. of divisions of the impeller vane curved line
+    :param i (int): section
+    :return theta (float): angle between vertical and middle streamline [rad]
+    """
+    theta = i * math.pi / (2 * n)
+
+    return theta
+
+
+def angle_gamma(r_c, r_slc, theta):
+    """Claculate blade tilt angle between horizontal and center blade.
+
+    The angle is determined so that each streamline in the impeller vane has
+    the same length for a given angle between vertical and center blade.
+
+    :param r_c (float): curvature radius [m]
+    :param r_slc (float): streamline curvature radius [m]
+    :param theta (float): angle between vertical and middle streamline [rad]
+    """
+    l_arc = (r_slc - r_c) * (math.pi / 2 - theta)
+
+    delta = l_arc / r_c
+
+    l_height = r_c * math.sin(delta)
+
+    b_half = r_slc - r_c * math.cos(delta)
+    alpha = math.atan(l_height / b_half)
+
+    gamma = math.pi / 2 - theta - alpha
+
+    return gamma
 
 
 def angle_beta(c_m, u, gamma, c_u=0, u_sf=0):
