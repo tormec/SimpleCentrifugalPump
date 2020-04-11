@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Calculation of geometrical dimensions for centrifugal pump."""
 
+import math
 import calc
 import constants as CN
 import shaft as sh
@@ -87,7 +88,7 @@ class Project(object):
                 eta.append(im.efficency_poly(k))
                 u_1.append(im.psi2u(psi[i], self.head))
                 d_1.append(im.diameter_omega(im.rpm2omega(n), u_1[i]))
-                b_1.append(im.width(d_1[i], u_1[i], phi[i], self.flow))
+                b_1.append(im.width(d_1[i], None, u_1[i], phi[i], self.flow))
                 bd_1.append(im.width0diameter(b_1[i], d_1[i]))
                 npsh_req.append(im.npsh_req(k, self.head))
 
@@ -116,7 +117,7 @@ class Project(object):
         eta = im.efficency_poly(cappa)
         u_1 = im.psi2u(psi, self.head)
         d_1 = im.diameter_omega(im.rpm2omega(rpm), u_1)
-        b_1 = im.width(d_1, u_1, phi, self.flow)
+        b_1 = im.width(d_1, None, u_1, phi, self.flow)
         bd_1 = im.width0diameter(b_1, d_1)
         npsh_req = im.npsh_req(cappa, self.head)
 
@@ -137,9 +138,11 @@ class Project(object):
         power = sh.power(eta, self.flow, self.head)
         torque = sh.torque(power, omega)
         d_sh = sh.shaft_diameter(torque, self.tau_adm)
+        d_sh = round(d_sh, 3)
         d_hu = calc.bisect(lambda d_hu, d_sh=d_sh:
                            (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
                            d_sh - 1, d_sh + 1, .001)
+        d_hu = round(d_hu, 3)
 
         results = {}
         for i in ["part", "omega", "power", "torque", "d_sh", "d_hu"]:
@@ -160,7 +163,7 @@ class Project(object):
         err = .001
         while dif > err:
             d_1 = im.diameter_omega(omega, u_1[-1])
-            d_1 = round(d_1 * 1000) / 1000
+            d_1 = round(d_1, 3)
             u_1.append(im.blade_vel(omega, d_1))
             dif = abs(u_1[-1] - u_1[-2])
         u_1 = u_1[-1]
@@ -186,7 +189,6 @@ class Project(object):
         r_c = im.curvature_rad(d_1)
         r_slc = im.streamline_curv_rad(d_hu, d_0, r_c)
         l_sl = im.streamline_len(r_slc, d_1, d_sl)
-        # a_0 = im.area(0, d_hu, d_0)
 
         psi = im.head_number(u_1, self.head)
         psi_th = im.theoretic_head_number(psi, self.eta_hyd)
@@ -197,10 +199,9 @@ class Project(object):
         err = .001
         c_1u = [im.psi_th2c_u(psi_th, u_1)]
         while dif > err:
-            b_1 = im.width(d_1, u_1, phi, self.flow, x_1, self.eta_vol)
-            b_1 = round(b_1 * 1000) / 1000
+            b_1 = im.width(d_1, None, u_1, phi, self.flow, x_1, self.eta_vol)
+            b_1 = round(b_1, 3)
             phi = im.flow_number(d_1, b_1, u_1, x_1, self.flow, self.eta_vol)
-            # a_1 = im.area(l_sl, d_1=d_1, b_1=b_1, x_1=x_1, l_sl=l_sl)
             phi_th = im.theoretic_flow_number(phi, x_1, self.eta_vol)
             c_1m = im.meridional_abs_vel(b_1, d_1, x_1, self.flow,
                                          self.eta_vol)
@@ -215,35 +216,65 @@ class Project(object):
 
         n = 11
         theta_i = []
-        gamma_i = []
         l_isl = []
         b_i = []
         c_im = []
         for i in range(n):
-            x_i = 1
+            x_i = [1]
+            c_iu = 0
             dif = 1
             err = .001
             theta_i.append(im.angle_theta(n, i))
-            l_isl.append(im.streamline_len(r_slc, theta=theta_i[-1]))
             d_isl = im.streamline_diam(d_hu, d_0, theta_i[-1], r_slc)
-            gamma_i.append(im.angle_gamma(r_c, r_slc, theta_i[-1]))
+            l_isl.append(im.streamline_len(r_slc, theta=theta_i[-1]))
+            gamma_i = im.angle_gamma(r_c, r_slc, theta_i[-1])
+            if gamma_i is None:
+                continue
             u_i = im.blade_vel(omega, d_isl)
             phi_i = phi
-            psi_i = im.head_number(u_i, self.head)
-            psi_ith = im.theoretic_head_number(psi_i, self.eta_hyd)
-            c_iu = [0]
             while dif > err:
-                b = im.width(d_isl, u_i, phi_i, self.flow, x_i, self.eta_vol)
-                phi_i = im.flow_number(d_isl, b, u_i, x_i, self.flow,
+                a_i = im.area(l_isl[-1], l_sl, d_hu, d_0, d_1, b_1, x_1)
+                b = im.width(d_isl, a_i)
+                phi_i = im.flow_number(d_isl, b, u_i, x_i[-1], self.flow,
                                        self.eta_vol)
-                c_m = im.meridional_abs_vel(b, d_isl, x_i, self.flow,
+                c_m = im.meridional_abs_vel(b, d_isl, x_i[-1], self.flow,
                                             self.eta_vol)
-                beta_i = im.angle_beta(c_m, u_i, 0, c_iu[-1])
-                x_i = im.blade_blockage(beta_i, d_isl, self.thk, self.z)
-                c_iu.append(im.circumferential_abs_vel(u_i, c_m, beta_i))
-                dif = abs(c_iu[-1] - c_iu[-2])
+                beta_i = im.angle_beta(c_m, u_i, gamma_i, c_iu)
+                print(math.degrees(beta_i))
+                x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
+                # if d_isl < d_0:
+                #     c_iu = 0  # still no interaction fluid-impeller
+                # else:
+                c_iu = im.circumferential_abs_vel(u_i, c_m, beta_i)
+                dif = abs(x_i[-1] - x_i[-2])
             b_i.append(b)
             c_im.append(c_m)
+
+        # n = 6
+        # for i in range(n):
+        #     x_i = [1]
+        #     #c_iu = c_iu
+        #     dif = 1
+        #     err = .001
+        #     d_isl = im.streamline_diam(d_hu, d_0)
+        #     l_isl.append(im.streamline_len(r_slc, d_1, d_isl))
+        #     u_i = im.blade_vel(omega, d_isl)
+        #     #phi_i = phi_i
+        #     psi_i = im.head_number(u_i, self.head)
+        #     psi_ith = im.theoretic_head_number(psi_i, self.eta_hyd)
+        #     while dif > err:
+        #         b = im.width(d_isl, u_i, phi_i, self.flow, x_i[-1],
+        #                      self.eta_vol)
+        #         phi_i = im.flow_number(d_isl, b, u_i, x_i[-1], self.flow,
+        #                                self.eta_vol)
+        #         c_m = im.meridional_abs_vel(b, d_isl, x_i[-1], self.flow,
+        #                                     self.eta_vol)
+        #         beta_i = im.angle_beta(c_m, u_i, 0, c_iu)
+        #         x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
+        #         c_iu = im.circumferential_abs_vel(u_i, c_m, beta_i)
+        #         dif = abs(x_i[-1] - x_i[-2])
+        #     b_i.append(b)
+        #     c_im.append(c_m)
 
         # dif = 1
         # err = .001
@@ -268,7 +299,7 @@ class Project(object):
                   "d_sl", "r_c", "r_slc", "l_sl",
                   "b_1", "phi", "psi_th", "phi_th", "beta_1",
                   "epsilon_ract", "u_1sf", "x_1", "c_1m", "c_1u", "w_1",
-                  "theta_i", "gamma_i", "l_isl", "b_i", "c_im"]:
+                  "theta_i", "l_isl", "b_i", "c_im"]:
             results[i] = locals()[i]
 
         return results
@@ -302,12 +333,12 @@ def main(**kwargs):
             if type(val) == list:
                 for k, v in enumerate(val):
                     if type(v) == tuple:
-                        val[k] = tuple(round(t, 3) for t in v)
+                        val[k] = tuple(round(t, 6) for t in v)
                     else:
-                        val[k] = round(v, 3)
+                        val[k] = round(v, 6)
                 print(key, " ", val)
             elif type(val) in (float, int):
-                print(key, " ", round(val, 3))
+                print(key, " ", round(val, 6))
             else:
                 print(val)
 
