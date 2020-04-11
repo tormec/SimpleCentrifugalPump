@@ -512,16 +512,15 @@ def angle_gamma(r_c, r_slc, theta):
     l_arc = (r_slc - r_c) * (math.pi / 2 - theta)
 
     delta = l_arc / r_c
-    if delta > math.pi / 2:
-        # limit of the tangent from center blade to circle with radius r_c
-        gamma = None
-    else:
-        l_height = r_c * math.sin(delta)
 
-        b_half = r_slc - r_c * math.cos(delta)
-        alpha = math.atan(l_height / b_half)
+    l_height = r_c * math.sin(delta)
 
+    b_half = r_slc - r_c * math.cos(delta)
+    alpha = math.atan(l_height / b_half)
+    if delta < math.pi / 2 - alpha:
         gamma = math.pi / 2 - theta - alpha
+    else:
+        gamma = None
 
     return gamma
 

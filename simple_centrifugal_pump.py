@@ -221,7 +221,6 @@ class Project(object):
         c_im = []
         for i in range(n):
             x_i = [1]
-            c_iu = 0
             dif = 1
             err = .001
             theta_i.append(im.angle_theta(n, i))
@@ -239,13 +238,8 @@ class Project(object):
                                        self.eta_vol)
                 c_m = im.meridional_abs_vel(b, d_isl, x_i[-1], self.flow,
                                             self.eta_vol)
-                beta_i = im.angle_beta(c_m, u_i, gamma_i, c_iu)
-                print(math.degrees(beta_i))
+                beta_i = im.angle_beta(c_m, u_i, gamma_i)
                 x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
-                # if d_isl < d_0:
-                #     c_iu = 0  # still no interaction fluid-impeller
-                # else:
-                c_iu = im.circumferential_abs_vel(u_i, c_m, beta_i)
                 dif = abs(x_i[-1] - x_i[-2])
             b_i.append(b)
             c_im.append(c_m)
