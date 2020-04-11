@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Calculation of geometrical dimensions for centrifugal pump."""
 
-import math
 import calc
 import constants as CN
 import shaft as sh
@@ -32,8 +31,6 @@ class Project(object):
         :param km (float): rate between circumeferential velocity cm2 and c0
         :param eta_vol (float): volumetric efficency
         :param eta_hyd (float): idraulic efficency
-        :param d2 (float): measured diameter
-        :param gamma_2 (int): measured angle between cm2 and vertical [deg]
         :param z (int): number of blades
         :param theta_3 (int): start wrap angle [deg]
         """
@@ -49,8 +46,6 @@ class Project(object):
         self.km = 1.2  # rate between peripheral velocity cm2 and c0
         self.eta_vol = .940  # volumetric efficency
         self.eta_hyd = .880  # hydraulic efficency
-        self.d2 = .112  # measured diameter [m]
-        self.gamma_2 = 5  # measured angle between cm2 and vertical [deg]
         self.z = 7  # number of blades
         self.theta_3 = 10  # start wrap angle for volute [deg]
 
