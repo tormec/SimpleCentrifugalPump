@@ -401,25 +401,22 @@ def width(d_isl, a_i=None, u_1=None, phi=None, flow=None, x_1=1, eta_vol=1):
     :param eta_vol (float): volumetric efficency
     :return b_i (float): impeller width at i-section [m]
     """
-    if a_i is not None:
-        b_i = a_i / (math.pi * d_isl)
-    else:
+    if a_i is None:
         b_i = flow / (math.pi * d_isl * u_1 * phi * x_1 * eta_vol)
+    else:
+        b_i = a_i / (math.pi * d_isl)
 
     return b_i
 
 
-def meridional_abs_vel(b, d, x, flow, eta_vol):
+def meridional_abs_vel(u, phi_th):
     """Calculate meridional component of the absolute velocity.
 
-    :param b (float): impeller width [m]
-    :param d (float): diameter [m]
-    :param x (float): blade blockage
-    :param flow (float): flow rate [m^3/s]
-    :param eta_vol (float): volumetric efficency
-    :return c_m (float): meridional component of the abs. vel. [m/s]
+    :param u (float): absolute velocity [m/s]
+    :param phi_th (float): theoretic flow number
+    :return c_m (float): meridional component of the absolute velocity [m/s]
     """
-    c_m = flow / (math.pi * d * b * x * eta_vol)
+    c_m = phi_th * u
 
     return c_m
 
@@ -428,7 +425,7 @@ def circumferential_abs_vel(u, c_m, beta_c):
     """Calculate circumferential component of the absolute velocity.
 
     :param u (float): absolute velocity [m/s]
-    :param c_m (float): meridional velocity component [m/s]
+    :param c_m (float): mmeridional component of the absolute velocity [m/s]
     :param beta_c (float): angle between rel. and blade velocity [m/s]
     :return c_u (float): circumferential component of the abs. vel. [m/s]
     """
@@ -477,7 +474,7 @@ def blade_vel(omega, d):
 def relative_vel(c_m, beta_c):
     """Calculate relative velocity.
 
-    :param c_m (float): meridional velocity [m/s]
+    :param c_m (float): meridional component of the absolute velocity [m/s]
     :param beta_c (float): angle between rel. and blade velocity [m/s]
     :return w (float): relative velocity [m/s]
     """
@@ -525,17 +522,17 @@ def angle_gamma(r_c, r_slc, theta):
     return gamma
 
 
-def angle_beta(c_m, u, gamma, c_u=0, u_sf=0):
+def angle_beta(u, c_m, gamma=0, psi_th=0, u_sf=0):
     """Calculate blade construction angle between rel. and blade velocity vect.
 
-    :param c_m (float): meridional component of the abs. velocity [m/s]
     :param u (float): blade velocity [m/s]
+    :param c_m (float): meridional component of the absolute velocity [m/s]
     :param gamma (float): angle between meridional abs. vel. and vert. [rad]
-    :param c_u (float): circumferential component of the abs. velocity [m/s]
+    :param psi_th (float): theoretic head number
     :param u_sf (float): slip factor
     :return beta (float): angle between rel. and blade velocity vectors [rad]
     """
-    beta = math.atan(c_m * math.cos(gamma) / (u * (1 - u_sf / u) - c_u))
+    beta = math.atan(c_m * math.cos(gamma) / (u * (1 - psi_th) - u_sf))
 
     return beta
 
