@@ -159,6 +159,18 @@ def theoretic_head_number(psi, eta_hyd):
     return psi_th
 
 
+def psi2u(psi, head):
+    """Calculate blade velocity for a given head number.
+
+    :param psi (float): head number
+    :param head (float): head [m]
+    :return u (float): blade velocity [m/s]
+    """
+    u = (CN.G * head / psi)**0.5
+
+    return u
+
+
 def width0diameter(b, d):
     """Calculate rate width over diameter.
 
@@ -355,22 +367,6 @@ def streamline_len(r_slc, d_1=None, d_sl=None, theta=None):
     return l_sl
 
 
-def diameter2theta(r_cvsl, r_mid, d_1, d_0, d_2):
-    """Calculate angle between radius middle streamline and vertical axis
-    at section 2.
-
-    :param r_cvsl (float): curvature radius [m]
-    :param r_mid (float): streamline radius [m]
-    :param d_1 (float): diameter at section 1 [m]
-    :param d_0 (float): diameter at section 0 [m]
-    :param d_2 (float): diameter at section 2 [m]
-    :return theta_2 (float): angle between streamline rad. and vert. [rad]
-    """
-    theta_2 = math.acos((d_1 - d_0 - 2 * r_cvsl - d_2) / (2 * r_mid))
-
-    return theta_2
-
-
 def area(l_isl, l_sl, d_hu, d_0, d_1, b_1, x_1):
     """Calculate impeller vane area at i-section along the middle streamline.
 
@@ -432,31 +428,6 @@ def circumferential_abs_vel(u, c_m, beta_c):
     c_u = u - c_m / math.tan(beta_c)
 
     return c_u
-
-
-def psi_th2c_u(psi_th, u):
-    """Calculate circumferential component of the absolute velocity for a
-    given theoretic head number.
-
-    :param psi_th (float): theoretic head number
-    :param u (float): blade velocity [m/s]
-    :return c_u (float): circumferential component of the abs. vel. [m/s]
-    """
-    c_u = psi_th * u
-
-    return c_u
-
-
-def psi2u(psi, head):
-    """Calculate blade velocity for a given head number.
-
-    :param psi (float): head number
-    :param head (float): head [m]
-    :return u (float): blade velocity [m/s]
-    """
-    u = (CN.G * head / psi)**0.5
-
-    return u
 
 
 def blade_vel(omega, d):
