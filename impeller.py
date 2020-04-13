@@ -62,12 +62,12 @@ def efficency_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     eta         .600 .750 .800 .890 .910 .920 .928 .929 .930 .929 .928
     weights     ones(cappa)
-    n           2
+    n           3
 
     :param cappa (float): typical number
     :return eta (float): efficency
     """
-    eta = 0.4389636 + 1.1381772 * cappa - 0.6284382 * cappa**2
+    eta = 0.237 + 2.332 * cappa - 2.569 * cappa**2 + 0.924 * cappa**3
 
     return eta
 
@@ -79,12 +79,12 @@ def efficency_hyd_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     eta_hyd     .600 .700 .750 .875 .895 .910 .913 .914 .915 .914 .913
     weights     ones(cappa)
-    n           2
+    n           3
 
     :param cappa (float): typical number
     :return eta_hyd (float): hydraulic efficency
     """
-    eta_hyd = 0.4086 + 1.1536317 * cappa - 0.6284382 * cappa**2
+    eta_hyd = 0.268 + 1.989 * cappa - 1.986 * cappa**2 + 0.646 * cappa**3
 
     return eta_hyd
 
@@ -96,12 +96,12 @@ def efficency_vol_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     eta_hyd     .910 .940 .950 .953 .955 .958 .960 .963 .965 .968 .970
     weights     ones(cappa)
-    n           2
+    n           3
 
     :param cappa (float): typical number
     :return eta_vol (float): volumetric efficency
     """
-    eta_vol = 0.8968727 + 0.1381305 * cappa - 0.067366 * cappa**2
+    eta_vol = 0.854 + 0.390 * cappa - 0.476 * cappa**2 + 0.195 * cappa**3
 
     return eta_vol
 
@@ -113,12 +113,12 @@ def flow_number_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     phi         .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
     weights     ones(cappa)
-    n           2
+    n           3
 
     :param cappa (float): typical number
     :return phi (float): flow number
     """
-    phi = 0.0567636 + 0.118979 * cappa - 0.0188811 * cappa**2
+    phi = 0.0675 + 0.0557 * cappa + 0.0839 * cappa**2 - 0.0490 * cappa**3
 
     return phi
 
@@ -159,12 +159,12 @@ def head_number_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     psi         .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
     weights     ones(cappa)
-    n           2
+    n           3
 
     :param cappa (float): typical number
     :return psi (float): head number
     """
-    psi = 0.5747273 - 0.0864569 * cappa - 0.0687646 * cappa**2
+    psi = 0.520 + 0.237 * cappa - 0.595 * cappa**2 + 0.251 * cappa**3
 
     return psi
 
