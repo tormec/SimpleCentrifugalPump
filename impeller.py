@@ -39,7 +39,7 @@ def rpm2pp(rpm, slip, hz):
     :param hz (int): utility frequency [Hz]
     :return pp (int): polar pairs
     """
-    pp = 120 * hz / rpm * (1 - slip / 100)
+    pp = round(120 * hz / rpm * (1 - slip / 100))
 
     return pp
 
@@ -60,16 +60,50 @@ def efficency_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta         0 .650 .800 .890 .910 .920 .928 .929 .930 .929 .928
+    eta         .600 .750 .800 .890 .910 .920 .928 .929 .930 .929 .928
     weights     ones(cappa)
     n           2
 
     :param cappa (float): typical number
-    :return eta_coef (float): efficency coefficients
+    :return eta (float): efficency
     """
-    eta = - 0.2774 + 3.0137016 * cappa - 1.7473193 * cappa**2
+    eta = 0.4389636 + 1.1381772 * cappa - 0.6284382 * cappa**2
 
     return eta
+
+
+def efficency_hyd_poly(cappa):
+    """Calculate hydraulic efficency for a given pump's typical number.
+
+    The polynomial has been calculated applaying the curve fitting at nodes
+    cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+    eta_hyd     .600 .700 .750 .875 .895 .910 .913 .914 .915 .914 .913
+    weights     ones(cappa)
+    n           2
+
+    :param cappa (float): typical number
+    :return eta_hyd (float): hydraulic efficency
+    """
+    eta_hyd = 0.4086 + 1.1536317 * cappa - 0.6284382 * cappa**2
+
+    return eta_hyd
+
+
+def efficency_vol_poly(cappa):
+    """Calculate volumetric efficency for a given pump's typical number.
+
+    The polynomial has been calculated applaying the curve fitting at nodes
+    cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
+    eta_hyd     .910 .940 .950 .953 .955 .958 .960 .963 .965 .968 .970
+    weights     ones(cappa)
+    n           2
+
+    :param cappa (float): typical number
+    :return eta_vol (float): volumetric efficency
+    """
+    eta_vol = 0.8968727 + 0.1381305 * cappa - 0.067366 * cappa**2
+
+    return eta_vol
 
 
 def flow_number_poly(cappa):
