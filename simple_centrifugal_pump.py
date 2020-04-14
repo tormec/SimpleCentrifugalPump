@@ -209,32 +209,47 @@ class Project(object):
             dif = abs(x_1[-1] - x_1[-2])
         x_1 = x_1[-1]
 
+        theta = []
+        b = []
+        x = []
         n = 11
         for i in range(n):
-            x_2 = [1]
+            x_i = [1]
             dif = 1
             err = .001
-            theta_2 = im.angle_theta(n, i)
-            d_2sl = im.streamline_diam(d_hu, d_0, theta_2, r_slc)
-            l_2sl = im.streamline_len(r_slc, theta=theta_2)
-            gamma_2 = im.angle_gamma(r_c, r_slc, theta_2)
-            if gamma_2 is None:
+            theta_i = im.angle_theta(n, i)
+            d_isl = im.streamline_diam(d_hu, d_0, theta_i, r_slc)
+            l_isl = im.streamline_len(r_slc, theta=theta_i)
+            gamma_i = im.angle_gamma(r_c, r_slc, theta_i)
+            if gamma_i is None:
                 continue
-            u_2 = im.blade_vel(omega, d_2sl)
+            u_i = im.blade_vel(omega, d_isl)
             while dif > err:
-                a_2 = im.area(l_2sl, l_sl, d_hu, d_0, d_1, b_1, x_1)
-                b_2 = im.width(d_2sl, a_2)
-                phi_2 = im.flow_number(d_2sl, b_2, u_2, x_2[-1], self.flow,
+                a_i = im.area(l_isl, l_sl, d_hu, d_0, d_1, b_1, x_1)
+                b_i = im.width(d_isl, a_i)
+                phi_i = im.flow_number(d_isl, b_i, u_i, x_i[-1], self.flow,
                                        eta_vol)
-                phi_2th = im.theoretic_flow_number(phi_2, x_2[-1],
-                                                   eta_vol)
-                c_2m = im.meridional_abs_vel(u_2, phi_2th)
-                beta_2 = im.angle_beta(u_2, c_2m, gamma_2)
-                w_2 = im.relative_vel(c_2m, beta_2)
-                x_2.append(im.blade_blockage(beta_2, d_2sl, self.thk, self.z))
-                dif = abs(x_2[-1] - x_2[-2])
-            x_2 = x_2[-1]
-            break
+                phi_ith = im.theoretic_flow_number(phi_i, x_i[-1], eta_vol)
+                c_im = im.meridional_abs_vel(u_i, phi_ith)
+                beta_i = im.angle_beta(u_i, c_im, gamma_i)
+                w_i = im.relative_vel(c_im, beta_i)
+                x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
+                dif = abs(x_i[-1] - x_i[-2])
+            theta.append(theta_i)
+            b.append(b_i)
+            x.append(x_i[-1])
+
+        theta_2 = theta[0]
+        b_2 = b[0]
+        x_2 = x[0]
+        d_2sl = im.streamline_diam(d_hu, d_0, theta_2, r_slc)
+        gamma_2 = im.angle_gamma(r_c, r_slc, theta_2)
+        u_2 = im.blade_vel(omega, d_2sl)
+        phi_2 = im.flow_number(d_2sl, b_2, u_2, x_2, self.flow, eta_vol)
+        phi_2th = im.theoretic_flow_number(phi_2, x_2, eta_vol)
+        c_2m = im.meridional_abs_vel(u_2, phi_2th)
+        beta_2 = im.angle_beta(u_2, c_2m, gamma_2)
+        w_2 = im.relative_vel(c_2m, beta_2)
 
         npsh_req = im.npsh_req(c_2m, w_2, self.lm, self.lw)
 
@@ -244,7 +259,9 @@ class Project(object):
                   "d_sl", "r_c", "r_slc", "l_sl",
                   "b_1", "phi", "psi_th", "phi_th", "beta_1",
                   "epsilon_ract", "u_1sf", "x_1", "c_1m", "c_1u", "w_1",
-                  "theta_2", "gamma_2", "b_2", "x_2", "c_2m", "w_2",
+                  "theta", "b",
+                  "theta_2", "b_2", "x_2", "d_2sl", "gamma_2", "beta_2"
+                  "u_2", "c_2m", "w_2",
                   "npsh_req"]:
             results[i] = locals()[i]
 
