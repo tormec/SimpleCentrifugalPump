@@ -217,7 +217,13 @@ def width0diameter(b, d):
     return bd
 
 
-def npsh_req(cappa, head):
+def npsh_req(c, w, lm, lw):
+    npsh_req = lw * w**2 / (2 * CN.G) + (1 + lm) * c**2 / (2 * CN.G)
+
+    return npsh_req
+
+
+def cappa2npsh(cappa, head):
     """Calculate the neat positive suction head required.
 
     :param cappa (float): typical number
