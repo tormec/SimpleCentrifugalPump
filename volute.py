@@ -14,57 +14,54 @@ def absolute_velocity_throat(cu1):
     return c_thr
 
 
-def area_throat(flow, c_thr):
-    """Calculate area at throat section.
+def area(flow, c_thr, theta=2*math.pi):
+    """Calculate area at i-section.
 
     :param flow (float): flow rate [m^3/s]
     :param c_thr (float): absolute velocity [m/s]
-    :return a_thr (float): area [m^2]
+    :param theta (float): angle at which eval. volute section [rad]
+    :return a (float): area [m^2]
     """
-    a_thr = flow / c_thr
+    a = (flow / c_thr) * (theta / 2 * math.pi)
 
-    return a_thr
+    return a
 
 
-def radius_start(d1):
-    """Calculate internal radius at the start wrap angle.
+def angle_theta(n, i):
+    """Calculate winding angle around volute axis.
 
-    :param d1 (float): diameter [m]
+    :param n (int): num. of divisions of the volute.
+    :param i (int): section
+    :return theta (float): winding angle [rad]
+    """
+    theta_0 = math.radians(10)
+    theta = theta_0 + i * (2 * math.pi - theta_0) / (n - 1)
+
+    return theta
+
+
+def diameter(d_1):
+    """Calculate internal diameter at the start winding angle.
+
+    :param d_1 (float): diameter of the impeller at section 1 [m]
     :return r3 (float): radius [m]
     """
-    r1 = d1 / 2
-    r3 = 1.1 * r1
+    d = 1.13 * d_1
 
-    return r3
+    return d
 
 
-def width_start(b1):
-    """Calculate width at the start wrap angle.
+def width(theta, a_thr=None, b_1=None):
+    """Calculate width volute vane at different winding angles.
 
-    :param b1 (float): impeller width [m]
-    :return b3 (float): width [m]
+    :param a_thr (float): area at throat section [m^2]
+    :param theta (float): angle at which eval. volute section [rad]
+    :param b_1 (float): impeller width at section 1 [m]
+    :return b (list): diameters at different winding angles [m]
     """
-    b3 = 1.715 * b1
+    if b_1 is not None:
+        b = 1.715 * b_1
+    else:
+        b = (2 * a_thr * theta / math.pi**2)**.5
 
-    return b3
-
-
-def width_volute_vane(a_thr, theta_3):
-    """Calculate width volute vane at different wrap angles.
-
-    :param a_thr (float): area [m^2]
-    :param theta_3 (int): start wrap angle [deg]
-    :return b_vl (list): diameters at different wrap angles [m]
-    """
-    n = 8  # num. divisions circumference
-    theta = []  # cumulative angles
-    b_vl = []
-    theta_3 = math.radians(theta_3)
-    for i in range(n + 1):  # 0, .., n
-        theta_i = ((2 * math.pi / n) * i)
-        if theta_i > theta_3:
-            theta.append(theta_i)
-            b_vl.append((2 * a_thr * (theta_i - theta_3) /
-                        math.pi**2)**.5)
-
-    return list(zip(theta, b_vl))
+    return b

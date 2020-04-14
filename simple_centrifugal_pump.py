@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Calculation of geometrical dimensions for centrifugal pump."""
 
-import math
 import calc
 import constants as CN
 import shaft as sh
@@ -46,14 +45,13 @@ class Project(object):
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
         self.km = 1.2  # rate between peripheral velocity cm2 and c0
         self.z = 7  # number of blades
-        self.theta_3 = 10  # start wrap angle for volute [deg]
 
         options = self.calc_options()
         choice = self.chose_option(**options)
         shaft = self.calc_shaft(**choice)
         impeller = self.calc_impeller(**{**choice, **shaft})
-        # volute = self.calc_volute(**impeller)
-        self.results = [options, choice, shaft, impeller] #, volute]
+        volute = self.calc_volute(**impeller)
+        self.results = [options, choice, shaft, impeller, volute]
 
     def calc_options(self):
         """Calculate several design options of an impeller."""
@@ -212,7 +210,7 @@ class Project(object):
         theta = []
         b = []
         x = []
-        n = 11
+        n = 15
         for i in range(n):
             x_i = [1]
             dif = 1
@@ -260,31 +258,39 @@ class Project(object):
                   "b_1", "phi", "psi_th", "phi_th", "beta_1",
                   "epsilon_ract", "u_1sf", "x_1", "c_1m", "c_1u", "w_1",
                   "theta", "b",
-                  "theta_2", "b_2", "x_2", "d_2sl", "gamma_2", "beta_2"
+                  "theta_2", "b_2", "x_2", "d_2sl", "gamma_2", "beta_2",
                   "u_2", "c_2m", "w_2",
                   "npsh_req"]:
             results[i] = locals()[i]
 
         return results
 
-    # def calc_volute(self, **kwargs):
-    #     """Calculate the volute."""
-    #     d_1 = kwargs["d_1"]
-    #     b_1 = kwargs["b_1"]
-    #     c_1_u = kwargs["c_1_u"]
+    def calc_volute(self, **kwargs):
+        """Calculate the volute."""
+        d_1 = kwargs["d_1"]
+        b_1 = kwargs["b_1"]
+        c_1u = kwargs["c_1u"]
 
-    #     part = "---volute---"
-    #     r_3 = vl.radius_start(d_1)
-    #     b_3 = vl.width_start(b_1)
-    #     c_thr = vl.absolute_velocity_throat(c_1_u)
-    #     a_thr = vl.area_throat(self.flow, c_thr)
-    #     b_vl = vl.width_volute_vane(a_thr, self.theta_3)
+        part = "---volute---"
+        d_3 = vl.diameter(d_1)
+        c_thr = vl.absolute_velocity_throat(c_1u)
+        a_thr = vl.area(self.flow, c_thr)
 
-    #     results = {}
-    #     for i in ["part", "r_3", "b_3", "c_thr", "a_thr", "b_vl"]:
-    #         results[i] = locals()[i]
+        n = 9
+        theta = []
+        b = []
+        for i in range(n):
+            theta.append(vl.angle_theta(n, i))
+            if i == 0:
+                b.append(vl.width(theta[-1], b_1=b_1))
+            else:
+                b.append(vl.width(theta[-1], a_thr))
 
-    #     return results
+        results = {}
+        for i in ["part", "d_3", "c_thr", "a_thr", "theta", "b"]:
+            results[i] = locals()[i]
+
+        return results
 
 
 def main(**kwargs):
