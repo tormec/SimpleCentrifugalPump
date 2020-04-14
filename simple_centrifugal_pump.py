@@ -45,8 +45,6 @@ class Project(object):
         self.lm = .04  # loss coefficient at section 0
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
         self.km = 1.2  # rate between peripheral velocity cm2 and c0
-        self.eta_vol = .940  # volumetric efficency
-        self.eta_hyd = .880  # hydraulic efficency
         self.z = 7  # number of blades
         self.theta_3 = 10  # start wrap angle for volute [deg]
 
@@ -86,7 +84,7 @@ class Project(object):
                 d_1.append(im.diameter_omega(im.rpm2omega(n), u_1[i]))
                 b_1.append(im.width(d_1[i], None, u_1[i], phi[i], self.flow))
                 bd_1.append(im.width0diameter(b_1[i], d_1[i]))
-                npsh_req.append(im.npsh_req(k, self.head))
+                npsh_req.append(im.cappa2npsh(k, self.head))
 
         results = {}
         for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta", "u_1",
@@ -102,7 +100,7 @@ class Project(object):
         part = "---chosen option---"
         for k in cappa:
             if k > .55:
-                # avoid, because it requires double curvature blades
+                # avoid it, because it requires double curvature blades
                 cappa.remove(k)
         if len(cappa) > 0:
             cappa = max(cappa)
@@ -115,7 +113,7 @@ class Project(object):
         d_1 = im.diameter_omega(im.rpm2omega(rpm), u_1)
         b_1 = im.width(d_1, None, u_1, phi, self.flow)
         bd_1 = im.width0diameter(b_1, d_1)
-        npsh_req = im.npsh_req(cappa, self.head)
+        npsh_req = im.cappa2npsh(cappa, self.head)
 
         results = {}
         for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta", "u_1",
@@ -148,12 +146,15 @@ class Project(object):
 
     def calc_impeller(self, **kwargs):
         """Calculate the impeller."""
+        cappa = kwargs["cappa"]
         phi = kwargs["phi"]
         u_1 = kwargs["u_1"]
         omega = kwargs["omega"]
         d_hu = kwargs["d_hu"]
 
         part = "---impeller---"
+        eta_hyd = im.efficency_hyd_poly(cappa)
+        eta_vol = im.efficency_vol_poly(cappa)
         u_1 = [u_1]
         dif = 1
         err = .001
@@ -165,17 +166,17 @@ class Project(object):
         u_1 = u_1[-1]
 
         psi = im.head_number(u_1, self.head)
-        psi_th = im.theoretic_head_number(psi, self.eta_hyd)
+        psi_th = im.theoretic_head_number(psi, eta_hyd)
 
         x_0 = [1]
         dif = 1
         err = .001
         while dif > err:
             d_0npsh = im.diameter_npsh(omega, x_0[-1], self.flow, self.lm,
-                                       self.lw, self.km, self.eta_vol)
+                                       self.lw, self.km, eta_vol)
             d_0eff = im.diameter_efficency(omega, x_0[-1], self.flow, self.km,
-                                           self.eta_vol)
-            d_0flow = im.diameter_flow(omega, x_0[-1], self.flow, self.eta_vol)
+                                           eta_vol)
+            d_0flow = im.diameter_flow(omega, x_0[-1], self.flow, eta_vol)
             d_0avg = im.average_diam(d_0npsh, d_0eff, d_0flow)
             d_0 = im.standard_diam(d_0avg)
             x_0.append(im.hub_blockage(d_0, d_hu))
@@ -193,13 +194,13 @@ class Project(object):
         err = .001
         while dif > err:
             b_1 = im.width(d_1, None, u_1, phi, self.flow, x_1[-1],
-                           self.eta_vol)
+                           eta_vol)
             b_1 = round(b_1, 3)
             phi = im.flow_number(d_1, b_1, u_1, x_1[-1], self.flow,
-                                 self.eta_vol)
-            phi_th = im.theoretic_flow_number(phi, x_1[-1], self.eta_vol)
+                                 eta_vol)
+            phi_th = im.theoretic_flow_number(phi, x_1[-1], eta_vol)
             c_1m = im.meridional_abs_vel(u_1, phi_th)
-            beta_1 = im.angle_beta_1(phi_th, psi_th, u_1, u_1sf)
+            beta_1 = im.angle_beta(u_1, c_1m, 0, psi_th, u_1sf)
             epsilon_ract = im.degree_reaction(phi_th, beta_1, self.z)
             u_1sf = im.slip_factor(u_1, beta_1, self.z)
             x_1.append(im.blade_blockage(beta_1, d_1, self.thk, self.z))
@@ -209,65 +210,33 @@ class Project(object):
         x_1 = x_1[-1]
 
         n = 11
-        theta = []
-        l = []
-        b = []
-        c_m = []
-        beta = []
-        gamma = []
         for i in range(n):
-            x_i = [1]
+            x_2 = [1]
             dif = 1
             err = .001
-            theta_i = im.angle_theta(n, i)
-            d_isl = im.streamline_diam(d_hu, d_0, theta_i, r_slc)
-            l_isl = im.streamline_len(r_slc, theta=theta_i)
-            gamma_i = im.angle_gamma(r_c, r_slc, theta_i)
-            if gamma_i is None:
+            theta_2 = im.angle_theta(n, i)
+            d_2sl = im.streamline_diam(d_hu, d_0, theta_2, r_slc)
+            l_2sl = im.streamline_len(r_slc, theta=theta_2)
+            gamma_2 = im.angle_gamma(r_c, r_slc, theta_2)
+            if gamma_2 is None:
                 continue
-            u_i = im.blade_vel(omega, d_isl)
+            u_2 = im.blade_vel(omega, d_2sl)
             while dif > err:
-                a_i = im.area(l_isl, l_sl, d_hu, d_0, d_1, b_1, x_1)
-                b_i = im.width(d_isl, a_i)
-                phi_i = im.flow_number(d_isl, b_i, u_i, x_i[-1], self.flow,
-                                       self.eta_vol)
-                phi_ith = im.theoretic_flow_number(phi_i, x_i[-1],
-                                                   self.eta_vol)
-                c_im = im.meridional_abs_vel(u_i, phi_ith)
-                beta_i = im.angle_beta(u_i, c_im, gamma_i)
-                x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
-                dif = abs(x_i[-1] - x_i[-2])
-            theta.append(theta_i)
-            l.append(l_isl)
-            b.append(b_i)
-            c_m.append(c_im)
-            beta.append(beta_i)
-            gamma.append(gamma_i)
-        print(math.degrees(theta[0]))
-        print(math.degrees(gamma[0]))
-        print(str('beta_1 ')+str(math.degrees(beta_1)))
-        print(str('beta_2 ')+str(math.degrees(beta[0])))
-        print(math.degrees(beta_1) - math.degrees(beta[0]))
+                a_2 = im.area(l_2sl, l_sl, d_hu, d_0, d_1, b_1, x_1)
+                b_2 = im.width(d_2sl, a_2)
+                phi_2 = im.flow_number(d_2sl, b_2, u_2, x_2[-1], self.flow,
+                                       eta_vol)
+                phi_2th = im.theoretic_flow_number(phi_2, x_2[-1],
+                                                   eta_vol)
+                c_2m = im.meridional_abs_vel(u_2, phi_2th)
+                beta_2 = im.angle_beta(u_2, c_2m, gamma_2)
+                w_2 = im.relative_vel(c_2m, beta_2)
+                x_2.append(im.blade_blockage(beta_2, d_2sl, self.thk, self.z))
+                dif = abs(x_2[-1] - x_2[-2])
+            x_2 = x_2[-1]
+            break
 
-
-
-
-        # dif = 1
-        # err = .001
-        # x_2 = [1]
-        # while dif > err:
-        #     theta_2 = im.diameter2theta(r_cvt, r_mid, d_1, d_0, d_2)
-        #     b_2 = im.width_2(a_0, a_1, r_mid, l_mid, theta_2, d_2)
-        #     u_2 = im.blade_vel(omega, d_2)
-        #     c_2_m = im.meridional_abs_vel(b_2, d_2, x_2[-1], self.flow,
-        #                                    self.eta_vol)
-        #     beta_2_c = im.angle_beta_2c(c_2_m, u_2, self.gamma_2)
-        #     c_2_u = im.circumeferential_abs_vel(u_2, c_2_m, beta_2_c)
-        #     w_2 = im.relative_vel(c_2_m, beta_2_c)
-        #     x_2.append(im.blade_blockage(beta_2_c, d_2, self.thk, self.z))
-        #     if len(x_2) > 2:
-        #         dif = abs(x_2[-1] - x_2[-2])
-        # x_2 = x_2[-1]
+        npsh_req = im.npsh_req(c_2m, w_2, self.lm, self.lw)
 
         results = {}
         for i in ["part", "d_1", "u_1", "psi",
@@ -275,7 +244,8 @@ class Project(object):
                   "d_sl", "r_c", "r_slc", "l_sl",
                   "b_1", "phi", "psi_th", "phi_th", "beta_1",
                   "epsilon_ract", "u_1sf", "x_1", "c_1m", "c_1u", "w_1",
-                  "theta", "l", "b", "c_m"]:
+                  "theta_2", "gamma_2", "b_2", "x_2", "c_2m", "w_2",
+                  "npsh_req"]:
             results[i] = locals()[i]
 
         return results
@@ -320,5 +290,5 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    main(flow=.018,  # [m^3/s]
-         head=28)  # [m]
+    main(flow=.011,  # [m^3/s]
+         head=25)  # [m]
