@@ -261,7 +261,10 @@ class Project(object):
                   "theta_2", "b_2", "x_2", "d_2sl", "gamma_2", "beta_2",
                   "u_2", "c_2m", "w_2",
                   "npsh_req"]:
-            results[i] = locals()[i]
+            if i in ["beta_1", "theta", "theta_2", "gamma_2", "beta_2"]:
+                results[i] = calc.rad2deg(locals()[i])
+            else:
+                results[i] = locals()[i]
 
         return results
 
@@ -288,7 +291,10 @@ class Project(object):
 
         results = {}
         for i in ["part", "d_3", "c_thr", "a_thr", "theta", "b"]:
-            results[i] = locals()[i]
+            if i in ["theta"]:
+                results[i] = calc.rad2deg(locals()[i])
+            else:
+                results[i] = locals()[i]
 
         return results
 

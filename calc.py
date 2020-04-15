@@ -1,3 +1,6 @@
+import math
+
+
 def bisect(f, a, b, err):
     """Implement bisection method to find the root of f(x) in [a, b].
 
@@ -28,15 +31,37 @@ def bisect(f, a, b, err):
     return x
 
 
+def rad2deg(rad):
+    """Convert radians to degrees.
+
+    :param rad (float/list): angle(s) in radians [rad]
+    :return deg (float/list): angle(s) in degrees [deg]
+    """
+    if type(rad) == list:
+        deg = [round(math.degrees(i)) for i in rad]
+    else:
+        deg = round(math.degrees(rad))
+
+    return deg
+
+
 class Test(object):
     """Test methods"""
     def f(self, x):
         return 2 * x + 1
 
-    def test_bisect(self, *args):
-        assert bisect(*args) == -.5
+    def test_bisect(self, f, a, b, err):
+        assert bisect(f, a, b, err) == -.5
+
+    def test_rad2deg(self, rad):
+        if type(rad) == list:
+            assert rad2deg(rad) == [0, 30, 45, 60, 90]
+        else:
+            assert rad2deg(rad) == 45
 
 
 if __name__ == "__main__":
     test = Test()
     test.test_bisect(test.f, -2, 2, .001)
+    test.test_rad2deg([0, math.pi / 6, math.pi / 4, math.pi / 3, math.pi / 2])
+    test.test_rad2deg(math.pi / 4)
