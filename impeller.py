@@ -351,13 +351,13 @@ def standard_diam(d):
     return d_std
 
 
-def curvature_rad(d_1):
+def curvature_rad(d_2):
     """Calculate curvature radius of the shroud at section 0.
 
-    :param d_1 (float): diameter at section 1 [m]
+    :param d_2 (float): diameter at section 1 [m]
     :return r_c (float): curvature radius [m]
     """
-    r_c = .06 * d_1
+    r_c = .06 * d_2
 
     return r_c
 
@@ -391,54 +391,54 @@ def streamline_curv_rad(d_hu, d_0, r_c):
     return r_slc
 
 
-def streamline_len(r_slc, d_1=None, d_sl=None, theta=None):
+def streamline_len(r_slc, d_2=None, d_sl=None, theta=None):
     """Calculate length middle streamline.
 
     :param r_slc (float): streamline curvature radius [m]
-    :param d_1 (float): diameter at section 1 [m]
+    :param d_2 (float): diameter at section 1 [m]
     :param d_sl (float): middle streamline diameter [m]
     :param theta (float): angle vertical axis and streamline curv. radius [rad]
     :return l_mid (float): middle streamline length [m]
     """
     if theta is None:
-        l_sl = math.pi / 2 * r_slc + (d_1 - d_sl - 2 * r_slc) / 2
+        l_sl = math.pi / 2 * r_slc + (d_2 - d_sl - 2 * r_slc) / 2
     else:
         l_sl = theta * r_slc
     return l_sl
 
 
-def area(l_isl, l_sl, d_hu, d_0, d_1, b_1, x_1):
+def area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2):
     """Calculate impeller vane area at i-section along the middle streamline.
 
     :param l_isl (float): middle streamline length at i-section [m]
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
-    :param d_1 (float): diameter at section 1 [m]
-    :param b_1 (list): impeller width at section 1 [m]
-    :param x_1 (float): blade blockage at section 1
+    :param d_2 (float): diameter at section 1 [m]
+    :param b_2 (list): impeller width at section 1 [m]
+    :param x_2 (float): blade blockage at section 1
     :return a_i (float): area at i-section
     """
     a_0 = (d_0**2 - d_hu**2) * math.pi / 4
-    a_1 = math.pi * d_1 * b_1 * x_1
-    a_i = a_0 + (a_1 - a_0) * l_isl / l_sl
+    a_2 = math.pi * d_2 * b_2 * x_2
+    a_i = a_0 + (a_2 - a_0) * l_isl / l_sl
 
     return a_i
 
 
-def width(d_isl, a_i=None, u_1=None, phi=None, flow=None, x_1=1, eta_vol=1):
+def width(d_isl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
     """Calculate impeller width at i-section.
 
     :param d_isl (float): diameter at i-section along middle streamline [m]
     :param a_i (flaot): area at i-section [m^2]
-    :param u_1 (float): blade velocity at section 1 [m/s]
+    :param u_2 (float): blade velocity at section 1 [m/s]
     :param phi (float): flow coefficient
     :param flow (float): flow rate [m^3/s]
-    :param x_1 (float): blade blockage at section 1
+    :param x_2 (float): blade blockage at section 1
     :param eta_vol (float): volumetric efficency
     :return b_i (float): impeller width at i-section [m]
     """
     if a_i is None:
-        b_i = flow / (math.pi * d_isl * u_1 * phi * x_1 * eta_vol)
+        b_i = flow / (math.pi * d_isl * u_2 * phi * x_2 * eta_vol)
     else:
         b_i = a_i / (math.pi * d_isl)
 
