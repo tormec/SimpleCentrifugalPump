@@ -204,7 +204,8 @@ class Project(object):
         theta = []
         b = []
         x = []
-        n = 15
+        t = 0
+        n = 16
         for i in range(n):
             x_i = [1]
             dif = 1
@@ -214,6 +215,11 @@ class Project(object):
             l_isl = im.streamline_len(r_slc, theta=theta_i)
             gamma_i = im.angle_gamma(r_c, r_slc, theta_i)
             if gamma_i is None:
+                theta.append(theta_i)
+                a_i = im.area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2)
+                b.append(im.width(d_isl, a_i))
+                x.append(0)
+                t = i
                 continue
             u_i = im.blade_vel(omega, d_isl)
             while dif > err:
@@ -231,9 +237,9 @@ class Project(object):
             b.append(b_i)
             x.append(x_i[-1])
 
-        theta_1 = theta[0]
-        b_1 = b[0]
-        x_1 = x[0]
+        theta_1 = theta[t + 1]
+        b_1 = b[t + 1]
+        x_1 = x[t + 1]
         d_1sl = im.streamline_diam(d_hu, d_0, theta_1, r_slc)
         gamma_1 = im.angle_gamma(r_c, r_slc, theta_1)
         u_1 = im.blade_vel(omega, d_1sl)

@@ -501,7 +501,7 @@ def angle_theta(n, i):
     :param i (int): section
     :return theta (float): angle between vertical and middle streamline [rad]
     """
-    theta = i * math.pi / (2 * n)
+    theta = i * math.pi / (2 * (n - 1))
 
     return theta
 
