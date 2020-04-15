@@ -521,11 +521,11 @@ def angle_gamma(r_c, r_slc, theta):
 
     delta = l_arc / r_c
 
-    l_height = r_c * math.sin(delta)
+    l_chord = r_c * math.sin(delta)
 
     b_half = r_slc - r_c * math.cos(delta)
-    alpha = math.atan(l_height / b_half)
-    if delta < math.pi / 2 - alpha:
+    alpha = math.atan(l_chord / b_half)
+    if delta < theta:
         gamma = math.pi / 2 - theta - alpha
     else:
         gamma = None
