@@ -40,27 +40,27 @@ def angle_theta(n, i):
     return theta
 
 
-def diameter(d_1):
+def diameter(d_2):
     """Calculate internal diameter at the start winding angle.
 
-    :param d_1 (float): diameter of the impeller at section 1 [m]
+    :param d_2 (float): diameter of the impeller at section 1 [m]
     :return r3 (float): radius [m]
     """
-    d = 1.13 * d_1
+    d = 1.13 * d_2
 
     return d
 
 
-def width(theta, a_thr=None, b_1=None):
+def width(theta, a_thr=None, b_2=None):
     """Calculate width volute vane at different winding angles.
 
     :param a_thr (float): area at throat section [m^2]
     :param theta (float): angle at which eval. volute section [rad]
-    :param b_1 (float): impeller width at section 1 [m]
+    :param b_2 (float): impeller width at section 1 [m]
     :return b (list): diameters at different winding angles [m]
     """
-    if b_1 is not None:
-        b = 1.715 * b_1
+    if b_2 is not None:
+        b = 1.715 * b_2
     else:
         b = (2 * a_thr * theta / math.pi**2)**.5
 

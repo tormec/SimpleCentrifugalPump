@@ -113,11 +113,11 @@ class Gui(tk.Frame):
         ent_d2 = tk.Entry(frm_input, textvariable=self.d2, width=10)
         ent_d2.grid(row=11, column=1, padx=5)
 
-        lbl_gamma_2 = tk.Label(frm_input, text="\u03b3 [deg]", anchor="e")
-        lbl_gamma_2.grid(row=12, column=0, sticky="e, w")
-        self.gamma_2 = tk.IntVar()
-        ent_gamma_2 = tk.Entry(frm_input, textvariable=self.gamma_2, width=10)
-        ent_gamma_2.grid(row=12, column=1, padx=5)
+        lbl_gamma_1 = tk.Label(frm_input, text="\u03b3 [deg]", anchor="e")
+        lbl_gamma_1.grid(row=12, column=0, sticky="e, w")
+        self.gamma_1 = tk.IntVar()
+        ent_gamma_1 = tk.Entry(frm_input, textvariable=self.gamma_1, width=10)
+        ent_gamma_1.grid(row=12, column=1, padx=5)
 
         lbl_z = tk.Label(frm_input, text="number of blade", anchor="e")
         lbl_z.grid(row=13, column=0, sticky="e, w")
@@ -161,11 +161,11 @@ class Gui(tk.Frame):
 
         fs_rpm = scp_pre.rotational_speed(self.slip, self.hz)
         fs_k_num = scp_pre.type_number(self.fs_rpm, self.flow, self.head)
-        fs_u1 = scp_pre._peripheral_velocity_1(self.head, self.fs_psi)
-        fs_d1 = scp_pre._diameter_1(self.fs_u1, self.fs_rpm)
-        fs_b1 = scp_pre._width_1(self.fs_u1, self.fs_d1, self.flow,
+        fs_u1 = scp_pre._peripheral_velocity_2(self.head, self.fs_psi)
+        fs_d1 = scp_pre._diameter_2(self.fs_u1, self.fs_rpm)
+        fs_b1 = scp_pre._width_2(self.fs_u1, self.fs_d1, self.flow,
                                  self.fs_phi)
-        fs_bd1 = scp_pre.width_diameter_1(self.fs_b1, self.fs_d1)
+        fs_bd1 = scp_pre.width_diameter_2(self.fs_b1, self.fs_d1)
         fs_npsh_r = scp_pre.npsh_r(self.fs_k_num, self.head)
 
         values = zip(self.fs_cpoles, self.fs_rpm, self.fs_k_num, self.fs_psi,
