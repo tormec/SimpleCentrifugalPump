@@ -38,9 +38,9 @@ def rad2deg(rad):
     :return deg (float/list): angle(s) in degrees [deg]
     """
     if type(rad) == list:
-        deg = [round(math.degrees(i)) for i in rad]
+        deg = [round(math.degrees(i), 2) for i in rad]
     else:
-        deg = round(math.degrees(rad))
+        deg = round(math.degrees(rad), 2)
 
     return deg
 
