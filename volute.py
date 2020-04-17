@@ -22,7 +22,7 @@ def area(flow, c_thr, theta=2*math.pi):
     :param theta (float): angle at which eval. volute section [rad]
     :return a (float): area [m^2]
     """
-    a = (flow / c_thr) * (theta / 2 * math.pi)
+    a = (flow / c_thr) * (theta / (2 * math.pi))
 
     return a
 
