@@ -46,7 +46,7 @@ def diameter(d_2):
     :param d_2 (float): diameter of the impeller at section 1 [m]
     :return r3 (float): radius [m]
     """
-    d = 1.13 * d_2
+    d = 1.1 * d_2
 
     return d
 
@@ -60,7 +60,7 @@ def width(theta, a_thr=None, b_2=None):
     :return b (list): diameters at different winding angles [m]
     """
     if b_2 is not None:
-        b = 1.715 * b_2
+        b = 1.8 * b_2
     else:
         b = (2 * a_thr * theta / math.pi**2)**.5
 
