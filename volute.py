@@ -32,6 +32,7 @@ def angle_theta(n, i):
 
     :param n (int): num. of divisions of the volute.
     :param i (int): section
+    :param b_3 (float): width at section 3
     :return theta (float): winding angle [rad]
     """
     theta = i * (2 * math.pi) / (n - 1)
@@ -50,17 +51,29 @@ def diameter(d_2):
     return d
 
 
-def width(theta, a_thr=None, b_2=None):
+def width_theta_min(b_2, a_thr):
+    """Calculate minimum width and relative winding angle.
+
+    :param b_2 (float): impeller width at section 2 [m]
+    :param a_thr (float): area at throat section [m^2]
+    """
+    b = 1.8 * b_2
+    theta = (math.pi * b)**2 / (2 * a_thr)
+
+    return (b, theta)
+
+
+def width(theta, a_thr, b_3):
     """Calculate width volute vane at different winding angles.
 
-    :param a_thr (float): area at throat section [m^2]
     :param theta (float): angle at which eval. volute section [rad]
-    :param b_2 (float): impeller width at section 1 [m]
+    :param a_thr (float): area at throat section [m^2]
+    :param b_3 (float): volute width at section 3 [m]
     :return b (list): diameters at different winding angles [m]
     """
-    if b_2 is not None:
-        b = 1.8 * b_2
-    else:
-        b = (2 * a_thr * theta / math.pi**2)**.5
+    b = (2 * a_thr * theta / math.pi**2)**.5
 
-    return b
+    if b > b_3:
+        return (b, theta)
+    else:
+        return None

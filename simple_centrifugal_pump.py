@@ -278,19 +278,20 @@ class Project(object):
         d_3 = vl.diameter(d_2)
         c_thr = vl.absolute_velocity_throat(c_2u)
         a_thr = vl.area(self.flow, c_thr)
+        b_3, theta_3 = vl.width_theta_min(b_2, a_thr)
 
         n = 9
         theta = []
         b = []
         for i in range(n):
-            theta.append(vl.angle_theta(n, i))
-            if i == 0:
-                b.append(vl.width(theta[-1], b_2=b_2))
-            else:
-                b.append(vl.width(theta[-1], a_thr))
+            dim = vl.width(vl.angle_theta(n, i), a_thr, b_3)
+            if dim is not None:
+                b.append(dim[0])
+                theta.append(dim[1])
 
         results = {}
-        for i in ["part", "d_3", "c_thr", "a_thr", "theta", "b"]:
+        for i in ["part", "d_3", "b_3", "theta_3", "c_thr", "a_thr",
+                  "theta", "b"]:
             if i in ["theta"]:
                 results[i] = calc.rad2deg(locals()[i])
             else:
