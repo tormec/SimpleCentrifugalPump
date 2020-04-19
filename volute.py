@@ -34,8 +34,7 @@ def angle_theta(n, i):
     :param i (int): section
     :return theta (float): winding angle [rad]
     """
-    theta_0 = math.radians(10)
-    theta = theta_0 + i * (2 * math.pi - theta_0) / (n - 1)
+    theta = i * (2 * math.pi) / (n - 1)
 
     return theta
 
