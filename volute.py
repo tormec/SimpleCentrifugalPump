@@ -72,6 +72,7 @@ def width(theta, a_thr, b_3):
     :return b (list): diameters at different winding angles [m]
     """
     b = (2 * a_thr * theta / math.pi**2)**.5
+
     if b > b_3:
         return (b, theta)
     else:
