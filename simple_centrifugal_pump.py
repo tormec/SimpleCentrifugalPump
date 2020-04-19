@@ -292,7 +292,7 @@ class Project(object):
         results = {}
         for i in ["part", "d_3", "b_3", "theta_3", "c_thr", "a_thr",
                   "theta", "b"]:
-            if i in ["theta"]:
+            if i in ["theta_3", "theta"]:
                 results[i] = calc.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
