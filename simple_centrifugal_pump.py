@@ -278,7 +278,7 @@ class Project(object):
         d_3 = vl.diameter(d_2)
         c_thr = vl.absolute_velocity_throat(c_2u)
         a_thr = vl.area(self.flow, c_thr)
-        b_3, theta_3 = vl.width_theta_min(b_2, a_thr)
+        b_3, theta_3 = vl.width_min(b_2, a_thr)
 
         n = 9
         theta = []
