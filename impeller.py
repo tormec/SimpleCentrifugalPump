@@ -132,7 +132,7 @@ def flow_number(d, b, u, x, flow, eta_vol):
     :param x (float): blade blockage
     :param flow (float): flow rate [m^3/s]
     :param eta_vol (float): volumetric efficency
-    :return phi (float): flow coefficient
+    :return phi (float): flow number
     """
     phi = flow / (math.pi * d * b * u * x * eta_vol)
 
@@ -140,12 +140,12 @@ def flow_number(d, b, u, x, flow, eta_vol):
 
 
 def theoretic_flow_number(phi, x, eta_vol):
-    """Calculate theoretic flow coefficient.
+    """Calculate theoretic flow number.
 
-    :param phi (float): flow coefficient
+    :param phi (float): flow number
     :param x (float): blade blockage
     :param eta_vol (float): volumetric efficency
-    :return phi_th (float): flow coefficient corrected
+    :return phi_th (float): theoretic flow number
     """
     phi_th = phi / (x * eta_vol)
 
@@ -218,13 +218,20 @@ def width0diameter(b, d):
 
 
 def npsh_req(c, w, lm, lw):
+    """Calculate the neat positive suction head required.
+
+    :param c (float): absolute velocity [m/s]
+    :param w (float): relative velocity [m/s]
+    :param lm (float): loss coefficient
+    :param lw (float): low-pressure peak coefficient at blades
+    """
     npsh_req = lw * w**2 / (2 * CN.G) + (1 + lm) * c**2 / (2 * CN.G)
 
     return npsh_req
 
 
 def cappa2npsh(cappa, head):
-    """Calculate the neat positive suction head required.
+    """Calculate the npsh required for a given pump's typical number.
 
     :param cappa (float): typical number
     :param head (float): head [m]
@@ -240,7 +247,7 @@ def hub_blockage(d, d_hu):
 
     :param d (float): diameter [m]
     :param d_hu (float): hub diameter [m]
-    :return x (float): hub blockage
+    :return x (float): hub blockage factor
     """
     x = 1 - (d_hu / d)**2
 
@@ -250,11 +257,11 @@ def hub_blockage(d, d_hu):
 def blade_blockage(beta_c, d, thk, z):
     """Calculate blade blockage.
 
-    :param beta_c (float): angle between rel. and blade velocity [m/s]
+    :param beta_c (float): angle between relative and blade velocity [m/s]
     :param d (float): diameter [m]
     :param thk (float): blade thickness [m]
     :param z (int): number of blades
-    :return x (float): blade blockage
+    :return x (float): blade blockage factor
     """
     x = 1 - (z * thk) / (math.pi * d * math.sin(beta_c))
 
@@ -279,8 +286,8 @@ def diameter_npsh(omega, x, flow, lm, lw, km, eta_vol):
     :param omega (float): angular velocity [rad/s]
     :param x (float): blockage factor
     :param flow (float): flow rate [m^3/s]
-    :param lm (float): loss coefficient at section 0
-    :param lw (float): low-pressure peak coefficient at blades at section 0
+    :param lm (float): loss coefficient
+    :param lw (float): low-pressure peak coefficient at blades
     :param km (float): rate between circumeferential velocity cm2 and c0
     :param eta_vol (float): volumetric efficency
     :return d_npsh (float): diameter with min npsh required [m]
@@ -297,7 +304,7 @@ def diameter_efficency(omega, x, flow, km, eta_vol):
     :param omega (float): angular velocity [rad/s]
     :param x (float): hub blockage
     :param flow (float): flow rate [m^3/s]
-    :param km (float): rate between circumeferential velocity cm2 and c0
+    :param km (float): rate between c_1m and c_0 velocity
     :param eta_vol (float): volumetric efficency
     :return d_eff (float): diameter with max efficency [m]
     """
@@ -308,7 +315,7 @@ def diameter_efficency(omega, x, flow, km, eta_vol):
 
 
 def diameter_flow(omega, x, flow, eta_vol):
-    """Calculate diameter function of the flow rate.
+    """Calculate diameter for a given flow rate.
 
     :param omega (float): angular velocity [rad/s]
     :param x (float): hub blockage
@@ -354,7 +361,7 @@ def standard_diam(d):
 def curvature_rad(d_2):
     """Calculate curvature radius of the shroud at section 0.
 
-    :param d_2 (float): diameter at section 1 [m]
+    :param d_2 (float): diameter at section 2 [m]
     :return r_c (float): curvature radius [m]
     """
     r_c = .06 * d_2
@@ -364,6 +371,11 @@ def curvature_rad(d_2):
 
 def streamline_diam(d_hu, d_0, theta=None, r_slc=None):
     """Calculate middle streamline diameter at a given angle.
+
+    streamline_diam(d_hu, d_0):
+        streamline diameter at section 0
+    streamline_diam(d_hu, d_0, theta, r_slc):
+        streamline diameter at i-section located by angle theta
 
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
@@ -392,10 +404,15 @@ def streamline_curv_rad(d_hu, d_0, r_c):
 
 
 def streamline_len(r_slc, d_2=None, d_sl=None, theta=None):
-    """Calculate length middle streamline.
+    """Calculate middle streamline length.
+
+    streamline_len(r_slc, d_2, d_sl):
+        middle streamline length from section 0 to 2
+    streamline_len(r_slc, d_2, d_sl, theta):
+        middle streamline length from section 0 to i located by angle theta
 
     :param r_slc (float): streamline curvature radius [m]
-    :param d_2 (float): diameter at section 1 [m]
+    :param d_2 (float): diameter at section 2 [m]
     :param d_sl (float): middle streamline diameter [m]
     :param theta (float): angle vertical axis and streamline curv. radius [rad]
     :return l_mid (float): middle streamline length [m]
@@ -413,9 +430,9 @@ def area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2):
     :param l_isl (float): middle streamline length at i-section [m]
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
-    :param d_2 (float): diameter at section 1 [m]
-    :param b_2 (list): impeller width at section 1 [m]
-    :param x_2 (float): blade blockage at section 1
+    :param d_2 (float): diameter at section 2 [m]
+    :param b_2 (list): impeller width at section 2 [m]
+    :param x_2 (float): blade blockage at section 2
     :return a_i (float): area at i-section
     """
     a_0 = (d_0**2 - d_hu**2) * math.pi / 4
@@ -428,12 +445,17 @@ def area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2):
 def width(d_isl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
     """Calculate impeller width at i-section.
 
+    width(d_isl, u_2, phi, flow, x_2, eta_vol):
+        width for a given flow rate
+    width(d_isl, a_i):
+        width for a given area
+
     :param d_isl (float): diameter at i-section along middle streamline [m]
     :param a_i (flaot): area at i-section [m^2]
-    :param u_2 (float): blade velocity at section 1 [m/s]
+    :param u_2 (float): blade velocity at section 2 [m/s]
     :param phi (float): flow coefficient
     :param flow (float): flow rate [m^3/s]
-    :param x_2 (float): blade blockage at section 1
+    :param x_2 (float): blade blockage at section 2
     :param eta_vol (float): volumetric efficency
     :return b_i (float): impeller width at i-section [m]
     """
@@ -471,7 +493,7 @@ def circumferential_abs_vel(u, c_m, beta_c):
 
 
 def blade_vel(omega, d):
-    """Calculate blade velocity function of angular velocity.
+    """Calculate blade velocity for a given angular velocity.
 
     :param omega (float): angular velocity [rad/s]
     :param d (float): diameter [m]
@@ -495,7 +517,7 @@ def relative_vel(c_m, beta_c):
 
 
 def angle_theta(n, i):
-    """Calculate angle between vertical and middle streamline.
+    """Calculate angle between vertical axis and middle streamline.
 
     :param n (int): num. of divisions of the impeller vane curved line
     :param i (int): section
@@ -510,7 +532,7 @@ def angle_gamma(r_c, r_slc, theta):
     """Claculate blade tilt angle between horizontal and center blade.
 
     The angle is determined so that each streamline in the impeller vane has
-    the same length for a given angle between vertical and center blade.
+    the same length for a given angle between vertical axis and center blade.
 
     :param r_c (float): curvature radius [m]
     :param r_slc (float): streamline curvature radius [m]

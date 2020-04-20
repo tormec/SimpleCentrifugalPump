@@ -37,7 +37,7 @@ class Project(object):
         self.thk = .003  # blade thickness [m]
         self.lm = .04  # loss coefficient at section 0
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
-        self.km = 1.2  # rate between peripheral velocity cm_1 and c_0
+        self.km = 1.2  # rate between c_1m and c_0 velocity
         self.z = 7  # number of blades
 
         options = self.calc_options()
