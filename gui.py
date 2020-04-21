@@ -2,6 +2,7 @@
 """Draw GUI for dimensioning simple centrifugal pump."""
 
 import tkinter as tk
+import simple_centrifugal_pump as scp
 
 
 class Gui(tk.Frame):
@@ -11,52 +12,51 @@ class Gui(tk.Frame):
         """Initialize the interface."""
         tk.Frame.__init__(self)
 
-        # input variables
+        # input
         frm_input = tk.Frame(master)
         frm_input.grid(row=0, column=0)
 
-        lbl_flow = tk.Label(frm_input, text="Flow [m\u00B3/s]", anchor="e")
-        lbl_flow.grid(row=0, column=0, sticky="e, w")
+        # entry widget where input flow rate value
+        lbl_flow = tk.Label(frm_input, text="flow rate [m^3/s]", anchor="e")
+        lbl_flow.grid(row=0, column=0, sticky="ew")
         self.flow = tk.DoubleVar()
         ent_flow = tk.Entry(frm_input, textvariable=self.flow, width=10)
         ent_flow.grid(row=0, column=1, padx=5)
 
-        lbl_head = tk.Label(frm_input, text="Head [m]", anchor="e")
-        lbl_head.grid(row=0, column=2, sticky="e, w")
+        # entry widget where input head value
+        lbl_head = tk.Label(frm_input, text="head [m]", anchor="e")
+        lbl_head.grid(row=0, column=2, sticky="ew")
         self.head = tk.DoubleVar()
         ent_head = tk.Entry(frm_input, textvariable=self.head, width=10)
         ent_head.grid(row=0, column=3, padx=5)
 
-        btn_calc = tk.Button(frm_input, text="Calculate",
+        # button widget which execute the main script
+        btn_calc = tk.Button(frm_input, text="calculate",
                              command=self.print_results)
         btn_calc.grid(row=0, column=4)
 
-        unit_col = ["", "[rpm]", "", "", "", "[m/s]", "[mm]", "[mm]", "",
-                    "[m]", ""]
-        name_col = ["c. poles", "n", "k", "\u03C8", "\u03C6", "u1", "d1",
-                    "b1", "b1/d1", "NPSHr", "\u03B7 tot"]
-        title_col = list(zip(unit_col, name_col))
+        # output
+        frm_output = tk.Frame(master)
+        frm_output.grid(row=1, column=0)
 
-        for i, v in enumerate(title_col):
-            lbl_title = tk.Label(frm_input, text=v[0] + "\n" + v[1])
-            lbl_title.grid(row=1, column=i)
-
-        # self.choice = tk.IntVar()
-        # self.entry_result = []
-        # for r in range(len(scp.CPOLES)):
-        #     for c in range(len(title_col)):
-        #         pos = str(r) + "," + str(c)  # name widget
-        #         var = tk.StringVar()
-        #         self.entry_result.append([pos, var])
-        #         ent_result = tk.Entry(frm_input, width=8,
-        #                               textvariable=var)
-        #         ent_result.grid(row=r+1, column=c+1)
-        #         rdb_result = tk.Radiobutton(frm_input, val=r,
-        #                                     variable=self.choice)
-        #         rdb_result.grid(row=r+1, column=0)
+        # text widget where to print results
+        self.txt_results = tk.Text(frm_output, state="disabled")
+        self.txt_results.grid(row=1, column=0)
+        # add vertical scrollbar
+        vbar = tk.Scrollbar(frm_output, command=self.txt_results.yview)
+        vbar.grid(row=1, column=1, sticky="ns")
+        self.txt_results["yscroll"] = vbar.set
+        # allow to copy the selection with ctrl+c
+        self.txt_results.bind("<1>",
+                              lambda event: self.txt_results.focus_set())
 
     def print_results(self):
-        pass
+        """Print the results."""
+        results = scp.main(flow=self.flow.get(), head=self.head.get())
+
+        self.txt_results["state"] = "normal"
+        self.txt_results.insert("end", results)
+        self.txt_results["state"] = "disabled"
 
 
 def main():

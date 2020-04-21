@@ -237,6 +237,8 @@ class Project(object):
             b.append(b_i)
             x.append(x_i[-1])
 
+        z = self.z
+
         theta_1 = theta[t + 1]
         b_1 = b[t + 1]
         x_1 = x[t + 1]
@@ -258,7 +260,7 @@ class Project(object):
                   "theta_1", "gamma_1", "beta_1", "b_1", "d_1sl", "x_1",
                   "u_1", "c_1m", "w_1",
                   "d_2", "u_2", "b_2",  "beta_2", "theta", "b",
-                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
+                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2", "z",
                   "psi", "psi_th", "phi",  "phi_th", "epsilon_ract",
                   "npsh_req"]:
             if i in ["beta_2", "theta", "theta_1", "gamma_1", "beta_1"]:
@@ -304,6 +306,7 @@ def main(**kwargs):
     """Print results."""
     prj = Project(**kwargs)
 
+    data = ""
     for result in prj.results:
         for key, val in result.items():
             if type(val) == list:
@@ -312,13 +315,14 @@ def main(**kwargs):
                         val[k] = tuple(round(t, 6) for t in v)
                     else:
                         val[k] = round(v, 6)
-                print(key, " ", val)
+                data += str(key) + " " + str(val) + "\n"
             elif type(val) in (float, int):
-                print(key, " ", round(val, 6))
+                data += str(key) + " " + str(round(val, 6)) + "\n"
             else:
-                print(val)
+                data += str(val) + "\n"
+
+    return data
 
 
 if __name__ == "__main__":
-    main(flow=.011,  # [m^3/s]
-         head=25)  # [m]
+    print(main(flow=.011, head=25))  # [m^3/s], [m]
