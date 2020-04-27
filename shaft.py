@@ -53,13 +53,14 @@ def torque(power, omega):
     return torque
 
 
-def shaft_diameter(torque, tau_adm):
+def shaft_diameter(torque, tau_adm, coef=1):
     """Calculate shaft diameter.
 
     :param torque (float): torque [Nm]
-    :param tau_adm (int): tau admissible [MPa]
+    :param tau_adm (float): tau admissible [MPa]
+    :param coef (int): security coeffient
     :return d_sh (float): shaft diameter [m]
     """
-    d_sh = ((32 * torque) / (math.pi * (tau_adm * 10**6)))**(1/3)
+    d_sh = ((16 * coef * torque) / (math.pi * (tau_adm * 10**6)))**(1/3)
 
     return d_sh

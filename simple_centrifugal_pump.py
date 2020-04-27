@@ -123,7 +123,7 @@ class Project(object):
         omega = sh.angular_velocity(rpm)
         power = sh.power(eta, self.flow, self.head)
         torque = sh.torque(power, omega)
-        d_sh = sh.shaft_diameter(torque, self.tau_adm)
+        d_sh = sh.shaft_diameter(torque, self.tau_adm, coef=2)
         d_sh = round(d_sh, 3)
         d_hu = calc.bisect(lambda d_hu, d_sh=d_sh:
                            (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
