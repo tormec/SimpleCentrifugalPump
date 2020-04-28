@@ -101,6 +101,8 @@ class Project(object):
         phi = im.flow_number_poly(cappa)
         psi = im.head_number_poly(cappa)
         eta = im.efficency_poly(cappa)
+        eta_hyd = im.efficency_hyd_poly(cappa)
+        eta_vol = im.efficency_vol_poly(cappa)
         u_2 = im.psi2u(psi, self.head)
         d_2 = im.diameter_omega(im.rpm2omega(rpm), u_2)
         b_2 = im.width(d_2, None, u_2, phi, self.flow)
@@ -108,8 +110,9 @@ class Project(object):
         npsh_req = im.cappa2npsh(cappa, self.head)
 
         results = {}
-        for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta", "u_2",
-                  "d_2", "b_2", "bd_2", "npsh_req"]:
+        for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta",
+                  "u_2", "d_2", "b_2", "bd_2",
+                  "eta_hyd", "eta_vol", "npsh_req"]:
             results[i] = locals()[i]
 
         return results
@@ -138,15 +141,14 @@ class Project(object):
 
     def calc_impeller(self, **kwargs):
         """Calculate the impeller."""
-        cappa = kwargs["cappa"]
+        eta_hyd = kwargs["eta_hyd"]
+        eta_vol = kwargs["eta_vol"]
         phi = kwargs["phi"]
         u_2 = kwargs["u_2"]
         omega = kwargs["omega"]
         d_hu = kwargs["d_hu"]
 
         part = "---impeller---"
-        eta_hyd = im.efficency_hyd_poly(cappa)
-        eta_vol = im.efficency_vol_poly(cappa)
         u_2 = [u_2]
         dif = 1
         err = .001
