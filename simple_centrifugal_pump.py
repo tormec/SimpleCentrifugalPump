@@ -195,13 +195,14 @@ class Project(object):
             phi_th = im.theoretic_flow_number(phi, x_2[-1], eta_vol)
             c_2m = im.meridional_abs_vel(u_2, phi_th)
             beta_2 = im.angle_beta(u_2, c_2m, 0, psi_th, u_2sf)
-            epsilon_ract = im.degree_reaction(phi_th, beta_2, self.z)
             u_2sf = im.slip_factor(u_2, beta_2, self.z)
             x_2.append(im.blade_blockage(beta_2, d_2, self.thk, self.z))
-            c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2)
-            w_2 = im.relative_vel(c_2m, beta_2)
             dif = abs(x_2[-1] - x_2[-2])
         x_2 = x_2[-1]
+
+        c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2)
+        w_2 = im.relative_vel(c_2m, beta_2)
+        epsilon_ract = im.degree_reaction(phi_th, beta_2, self.z)
 
         theta = []
         b = []
