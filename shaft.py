@@ -4,15 +4,15 @@ import math
 import constants as CN
 
 
-def rotational_speed(pp, slip, hz):
-    """Calculate rotational speed at different pole pairs of an AC motor.
+def rotational_speed(np, slip, hz):
+    """Calculate rotational speed at different number of poles of an AC motor.
 
-    :param pp (int): pole pairs of an AC motor
+    :param np (int): number of poles of an AC motor
     :param slip (int): slip factor [%]
     :param hz (int): utility frequency [Hz]
     :return rpm (float): rotational speed [rpm]
     """
-    rpm = 120 * hz / pp * (1 - slip / 100)
+    rpm = 120 * hz / np * (1 - slip / 100)
 
     return rpm
 

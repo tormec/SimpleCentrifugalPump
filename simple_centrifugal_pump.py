@@ -50,7 +50,7 @@ class Project(object):
     def calc_options(self):
         """Calculate several design options of an impeller."""
         part = "---options---"
-        pp = []
+        np = []
         rpm = []
         cappa = []
         phi = []
@@ -61,12 +61,12 @@ class Project(object):
         b_2 = []
         bd_2 = []
         npsh_req = []
-        for i, p in enumerate(CN.PPAIRS):
+        for i, p in enumerate(CN.NPOLES):
             n = sh.rotational_speed(p, self.slip, self.hz)
             k = im.type_number(sh.angular_velocity(n), self.flow, self.head)
             # only typical numbers in the domain of centrifugal pumps
             if 0.2 <= k <= 1.2:
-                pp.append(p)
+                np.append(p)
                 rpm.append(n)
                 cappa.append(k)
                 phi.append(im.flow_number_poly(k))
@@ -79,7 +79,7 @@ class Project(object):
                 npsh_req.append(im.cappa2npsh(k, self.head))
 
         results = {}
-        for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta", "u_2",
+        for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta", "u_2",
                   "d_2", "b_2", "bd_2", "npsh_req"]:
             results[i] = locals()[i]
 
@@ -97,7 +97,7 @@ class Project(object):
         if len(cappa) > 0:
             cappa = max(cappa)
         rpm = im.cappa2rpm(cappa, self.flow, self.head)
-        pp = im.rpm2pp(rpm, self.slip, self.hz)
+        np = im.rpm2np(rpm, self.slip, self.hz)
         phi = im.flow_number_poly(cappa)
         psi = im.head_number_poly(cappa)
         eta = im.efficency_poly(cappa)
@@ -110,7 +110,7 @@ class Project(object):
         npsh_req = im.cappa2npsh(cappa, self.head)
 
         results = {}
-        for i in ["part", "pp", "rpm", "cappa", "phi", "psi", "eta",
+        for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta",
                   "u_2", "d_2", "b_2", "bd_2",
                   "eta_hyd", "eta_vol", "npsh_req"]:
             results[i] = locals()[i]

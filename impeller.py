@@ -31,17 +31,17 @@ def cappa2rpm(cappa, flow, head):
     return rpm
 
 
-def rpm2pp(rpm, slip, hz):
-    """Calculate polar pairs of an AC motor for a given rotational speed.
+def rpm2np(rpm, slip, hz):
+    """Calculate number of poles of an AC motor for a given rotational speed.
 
     :param rpm (float): rotational speed [rpm]
     :param slip (int): slip factor [%]
     :param hz (int): utility frequency [Hz]
-    :return pp (int): polar pairs
+    :return np (int): number of poles
     """
-    pp = round(120 * hz / rpm * (1 - slip / 100))
+    np = round(120 * hz / rpm * (1 - slip / 100))
 
-    return pp
+    return np
 
 
 def rpm2omega(rpm):
