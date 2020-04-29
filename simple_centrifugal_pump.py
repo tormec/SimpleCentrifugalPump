@@ -202,7 +202,7 @@ class Project(object):
 
         c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2)
         w_2 = im.relative_vel(c_2m, beta_2)
-        epsilon_ract = im.degree_reaction(phi_th, beta_2, self.z)
+        epsilon_ract = im.degree_reaction(phi, beta_2, self.z)
 
         theta = []
         b = []

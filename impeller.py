@@ -583,15 +583,15 @@ def slip_factor(u, beta_c, z):
     return u_sf
 
 
-def degree_reaction(phi_th, beta_c, z):
+def degree_reaction(phi, beta_c, z):
     """Calculate degree of reaction.
 
-    :param phi_th (float): flow coefficient corrected
+    :param phi (float): flow number
     :param beta_c (float): angle between rel. and blade velocity [m/s]
     :param z (int): number of blades
     :return epsilon_ract (float): degree of reaction
     """
-    epsilon_ract = 1 - (1 - phi_th / math.tan(beta_c) -
+    epsilon_ract = 1 - (1 - phi / math.tan(beta_c) -
                         (math.sin(beta_c))**.5 / z**.7) / 2
 
     return epsilon_ract
