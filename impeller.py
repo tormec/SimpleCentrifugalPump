@@ -408,7 +408,7 @@ def streamline_len(r_slc, d_2=None, d_sl=None, theta=None):
 
     streamline_len(r_slc, d_2, d_sl):
         middle streamline length from section 0 to 2
-    streamline_len(r_slc, d_2, d_sl, theta):
+    streamline_len(r_slc, theta):
         middle streamline length from section 0 to i located by angle theta
 
     :param r_slc (float): streamline curvature radius [m]
