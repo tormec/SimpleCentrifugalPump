@@ -233,7 +233,6 @@ class Project(object):
                 phi_ith = im.theoretic_flow_number(phi_i, x_i[-1], eta_vol)
                 c_im = im.meridional_abs_vel(u_i, phi_ith)
                 beta_i = im.angle_beta(u_i, c_im, gamma_i)
-                w_i = im.relative_vel(c_im, beta_i)
                 x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
                 dif = abs(x_i[-1] - x_i[-2])
             theta.append(theta_i)
