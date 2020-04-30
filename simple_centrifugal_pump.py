@@ -252,7 +252,7 @@ class Project(object):
                   "d_sl", "r_c", "r_slc", "l_sl",
                   "theta_1", "gamma_1", "beta_1", "b_1", "d_1sl", "x_1",
                   "u_1", "c_1m", "w_1",
-                  "d_2", "u_2", "b_2",  "beta_2", "theta", "b",
+                  "theta", "b", "d_2", "u_2", "b_2",  "beta_2",
                   "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
                   "psi", "psi_th", "phi",  "phi_th", "epsilon_ract",
                   "npsh_req"]:
