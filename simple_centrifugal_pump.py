@@ -207,41 +207,34 @@ class Project(object):
         theta = []
         b = []
         x = []
-        t = 0
         n = 16
         for i in range(n):
             x_i = [1]
             dif = 1
             err = .001
-            theta_i = im.angle_theta(n, i)
-            d_isl = im.streamline_diam(d_hu, d_0, theta_i, r_slc)
-            l_isl = im.streamline_len(r_slc, theta=theta_i)
-            gamma_i = im.angle_gamma(r_c, r_slc, theta_i)
+            theta.append(im.angle_theta(n, i))
+            d_isl = im.streamline_diam(d_hu, d_0, theta[-1], r_slc)
+            l_isl = im.streamline_len(r_slc, theta=theta[-1])
+            a_i = im.area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2)
+            b.append(im.width(d_isl, a_i))
+            gamma_i = im.angle_gamma(r_c, r_slc, theta[-1])
             if gamma_i is None:
-                theta.append(theta_i)
-                a_i = im.area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2)
-                b.append(im.width(d_isl, a_i))
                 x.append(0)
-                t = i
                 continue
             u_i = im.blade_vel(omega, d_isl)
             while dif > err:
-                a_i = im.area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2)
-                b_i = im.width(d_isl, a_i)
-                phi_i = im.flow_number(d_isl, b_i, u_i, x_i[-1], self.flow,
+                phi_i = im.flow_number(d_isl, b[-1], u_i, x_i[-1], self.flow,
                                        eta_vol)
                 phi_ith = im.theoretic_flow_number(phi_i, x_i[-1], eta_vol)
                 c_im = im.meridional_abs_vel(u_i, phi_ith)
                 beta_i = im.angle_beta(u_i, c_im, gamma_i)
                 x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
                 dif = abs(x_i[-1] - x_i[-2])
-            theta.append(theta_i)
-            b.append(b_i)
             x.append(x_i[-1])
 
-        theta_1 = theta[t + 1]
-        b_1 = b[t + 1]
-        x_1 = x[t + 1]
+        theta_1 = theta[x.count(0)]
+        b_1 = b[x.count(0)]
+        x_1 = x[x.count(0)]
         d_1sl = im.streamline_diam(d_hu, d_0, theta_1, r_slc)
         gamma_1 = im.angle_gamma(r_c, r_slc, theta_1)
         u_1 = im.blade_vel(omega, d_1sl)
