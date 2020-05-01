@@ -149,19 +149,7 @@ class Project(object):
         d_hu = kwargs["d_hu"]
 
         part = "---impeller---"
-        u_2 = [u_2]
-        dif = 1
-        err = .001
-        while dif > err:
-            d_2 = im.diameter_omega(omega, u_2[-1])
-            d_2 = round(d_2, 3)
-            u_2.append(im.blade_vel(omega, d_2))
-            dif = abs(u_2[-1] - u_2[-2])
-        u_2 = u_2[-1]
-
-        psi = im.head_number(u_2, self.head)
-        psi_th = im.theoretic_head_number(psi, eta_hyd)
-
+        # suction eye
         x_0 = [1]
         dif = 1
         err = .001
@@ -177,6 +165,19 @@ class Project(object):
             dif = abs(x_0[-1] - x_0[-2])
         x_0 = x_0[-1]
 
+        # blade leading edge
+        u_2 = [u_2]
+        dif = 1
+        err = .001
+        while dif > err:
+            d_2 = im.diameter_omega(omega, u_2[-1])
+            d_2 = round(d_2, 3)
+            u_2.append(im.blade_vel(omega, d_2))
+            dif = abs(u_2[-1] - u_2[-2])
+        u_2 = u_2[-1]
+
+        psi = im.head_number(u_2, self.head)
+        psi_th = im.theoretic_head_number(psi, eta_hyd)
         d_sl = im.streamline_diam(d_hu, d_0)
         r_c = im.curvature_rad(d_2)
         r_slc = im.streamline_curv_rad(d_hu, d_0, r_c)
@@ -204,6 +205,7 @@ class Project(object):
         w_2 = im.relative_vel(c_2m, beta_2)
         epsilon_ract = im.degree_reaction(phi, beta_2, self.z)
 
+        # blade trailing edge
         theta = []
         b = []
         x = []
