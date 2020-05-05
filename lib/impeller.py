@@ -1,7 +1,7 @@
 """Methods to calculate the impeller."""
 
 import math
-import constants as CN
+import lib.constants as CN
 
 
 def type_number(omega, flow, head):

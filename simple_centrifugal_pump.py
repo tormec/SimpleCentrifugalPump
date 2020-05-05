@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Calculation of geometrical dimensions for centrifugal pump."""
 
-import calc
-import constants as CN
-import shaft as sh
-import impeller as im
-import volute as vl
+import lib.constants as CN
+import lib.calc as cl
+import lib.shaft as sh
+import lib.impeller as im
+import lib.volute as vl
 
 
 class Project(object):
@@ -128,9 +128,9 @@ class Project(object):
         torque = sh.torque(power, omega)
         d_sh = sh.shaft_diameter(torque, self.tau_adm, coef=2)
         d_sh = round(d_sh, 3)
-        d_hu = calc.bisect(lambda d_hu, d_sh=d_sh:
-                           (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
-                           d_sh - 1, d_sh + 1, .001)
+        d_hu = cl.bisect(lambda d_hu, d_sh=d_sh:
+                         (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
+                         d_sh - 1, d_sh + 1, .001)
         d_hu = round(d_hu, 3)
 
         results = {}
@@ -259,7 +259,7 @@ class Project(object):
                   "psi", "psi_th", "phi",  "phi_th", "epsilon_ract",
                   "npsh_req"]:
             if i in ["beta_2b", "theta", "theta_1", "gamma_1", "beta_1b"]:
-                results[i] = calc.rad2deg(locals()[i])
+                results[i] = cl.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
 
@@ -290,7 +290,7 @@ class Project(object):
         for i in ["part", "d_3", "b_3", "theta_3", "c_thr", "a_thr",
                   "theta", "b"]:
             if i in ["theta_3", "theta"]:
-                results[i] = calc.rad2deg(locals()[i])
+                results[i] = cl.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
 

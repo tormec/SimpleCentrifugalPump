@@ -1,7 +1,7 @@
 """Methods to calculate the pump shaft."""
 
 import math
-import constants as CN
+import lib.constants as CN
 
 
 def rotational_speed(np, slip, hz):
