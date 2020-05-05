@@ -254,16 +254,16 @@ def hub_blockage(d, d_hu):
     return x
 
 
-def blade_blockage(beta_c, d, thk, z):
+def blade_blockage(beta_b, d, t, z):
     """Calculate blade blockage.
 
-    :param beta_c (float): angle between relative and blade velocity [m/s]
+    :param beta_b (float): angle between relative and blade velocity [m/s]
     :param d (float): diameter [m]
-    :param thk (float): blade thickness [m]
+    :param t (float): blade thickness [m]
     :param z (int): number of blades
     :return x (float): blade blockage factor
     """
-    x = 1 - (z * thk) / (math.pi * d * math.sin(beta_c))
+    x = 1 - (z * t) / (math.pi * d * math.sin(beta_b))
 
     return x
 
@@ -362,72 +362,73 @@ def curvature_rad(d_2):
     """Calculate curvature radius of the shroud at section 0.
 
     :param d_2 (float): diameter at section 2 [m]
-    :return r_c (float): curvature radius [m]
+    :return r_cvt (float): curvature radius [m]
     """
-    r_c = .06 * d_2
+    r_cvt = .06 * d_2
 
-    return r_c
+    return r_cvt
 
 
-def streamline_diam(d_hu, d_0, theta=None, r_slc=None):
+def streamline_diam(d_hu, d_0, theta=None, r_msl=None):
     """Calculate middle streamline diameter at a given angle.
 
     streamline_diam(d_hu, d_0):
         streamline diameter at section 0
-    streamline_diam(d_hu, d_0, theta, r_slc):
+    streamline_diam(d_hu, d_0, theta, r_msl):
         streamline diameter at i-section located by angle theta
 
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
     :param theta (float): angle vertical axis and streamline curv. radius [rad]
-    :param r_slc (float): streamline curvature radius [m]
-    :return d_sl (float): middle streamline diameter [m]
+    :param r_msl (float): middle streamline curvature radius [m]
+    :return d_msl (float): middle streamline diameter [m]
     """
-    d_sl = (d_0 + d_hu) / 2
+    d_msl = (d_0 + d_hu) / 2
     if theta is not None:
-        d_sl = d_sl + (r_slc * (1 - math.cos(theta))) * 2
+        d_msl = d_msl + (r_msl * (1 - math.cos(theta))) * 2
 
-    return d_sl
+    return d_msl
 
 
-def streamline_curv_rad(d_hu, d_0, r_c):
+def streamline_curv_rad(d_hu, d_0, r_cvt):
     """Calculate middle streamline curvature radius.
 
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
-    :param r_c (float): curvature radius [m]
-    :return r_slc (float): streamline curvature radius [m]
+    :param r_cvt (float): curvature radius [m]
+    :return r_msl (float): middle streamline curvature radius [m]
     """
-    r_slc = (d_0 - d_hu) / 4 + r_c
+    r_msl = (d_0 - d_hu) / 4 + r_cvt
 
-    return r_slc
+    return r_msl
 
 
-def streamline_len(r_slc, d_2=None, d_sl=None, theta=None):
+def streamline_len(r_msl, d_2=None, d_msl=None, theta=None):
     """Calculate middle streamline length.
 
-    streamline_len(r_slc, d_2, d_sl):
+    streamline_len(r_msl, d_2, d_msl):
         middle streamline length from section 0 to 2
-    streamline_len(r_slc, theta):
+    streamline_len(r_msl, theta):
         middle streamline length from section 0 to i located by angle theta
 
-    :param r_slc (float): streamline curvature radius [m]
+    :param r_msl (float): middle streamline curvature radius [m]
     :param d_2 (float): diameter at section 2 [m]
-    :param d_sl (float): middle streamline diameter [m]
+    :param d_msl (float): middle streamline diameter [m]
     :param theta (float): angle vertical axis and streamline curv. radius [rad]
-    :return l_mid (float): middle streamline length [m]
+    :return l_msl (float): middle streamline length [m]
     """
     if theta is None:
-        l_sl = math.pi / 2 * r_slc + (d_2 - d_sl - 2 * r_slc) / 2
+        l_msl = math.pi / 2 * r_msl + (d_2 - d_msl - 2 * r_msl) / 2
     else:
-        l_sl = theta * r_slc
-    return l_sl
+        l_msl = theta * r_msl
+    return l_msl
 
 
-def area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2):
+def area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2):
     """Calculate impeller vane area at i-section along the middle streamline.
 
-    :param l_isl (float): middle streamline length at i-section [m]
+    :param l_imsl (float): middle streamline length at i-section [m]
+    :param l_msl (float): middle streamline length [m]
     :param d_hu (float): hub diameter [m]
     :param d_0 (float): diameter at section 0 [m]
     :param d_2 (float): diameter at section 2 [m]
@@ -437,20 +438,20 @@ def area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2):
     """
     a_0 = (d_0**2 - d_hu**2) * math.pi / 4
     a_2 = math.pi * d_2 * b_2 * x_2
-    a_i = a_0 + (a_2 - a_0) * l_isl / l_sl
+    a_i = a_0 + (a_2 - a_0) * l_imsl / l_msl
 
     return a_i
 
 
-def width(d_isl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
+def width(d_imsl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
     """Calculate impeller width at i-section.
 
-    width(d_isl, u_2, phi, flow, x_2, eta_vol):
+    width(d_imsl, u_2, phi, flow, x_2, eta_vol):
         width for a given flow rate
-    width(d_isl, a_i):
+    width(d_imsl, a_i):
         width for a given area
 
-    :param d_isl (float): diameter at i-section along middle streamline [m]
+    :param d_imsl (float): middle streamline diameter at i-section [m]
     :param a_i (flaot): area at i-section [m^2]
     :param u_2 (float): blade velocity at section 2 [m/s]
     :param phi (float): flow coefficient
@@ -460,9 +461,9 @@ def width(d_isl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
     :return b_i (float): impeller width at i-section [m]
     """
     if a_i is None:
-        b_i = flow / (math.pi * d_isl * u_2 * phi * x_2 * eta_vol)
+        b_i = flow / (math.pi * d_imsl * u_2 * phi * x_2 * eta_vol)
     else:
-        b_i = a_i / (math.pi * d_isl)
+        b_i = a_i / (math.pi * d_imsl)
 
     return b_i
 
@@ -479,15 +480,15 @@ def meridional_abs_vel(u, phi_th):
     return c_m
 
 
-def circumferential_abs_vel(u, c_m, beta_c):
+def circumferential_abs_vel(u, c_m, beta_b):
     """Calculate circumferential component of the absolute velocity.
 
     :param u (float): absolute velocity [m/s]
     :param c_m (float): mmeridional component of the absolute velocity [m/s]
-    :param beta_c (float): angle between rel. and blade velocity [m/s]
+    :param beta_b (float): angle between rel. and blade velocity [m/s]
     :return c_u (float): circumferential component of the abs. vel. [m/s]
     """
-    c_u = u - c_m / math.tan(beta_c)
+    c_u = u - c_m / math.tan(beta_b)
 
     return c_u
 
@@ -504,14 +505,14 @@ def blade_vel(omega, d):
     return u
 
 
-def relative_vel(c_m, beta_c):
+def relative_vel(c_m, beta_b):
     """Calculate relative velocity.
 
     :param c_m (float): meridional component of the absolute velocity [m/s]
-    :param beta_c (float): angle between rel. and blade velocity [m/s]
+    :param beta_b (float): angle between rel. and blade velocity [m/s]
     :return w (float): relative velocity [m/s]
     """
-    w = c_m / math.sin(beta_c)
+    w = c_m / math.sin(beta_b)
 
     return w
 
@@ -528,24 +529,24 @@ def angle_theta(n, i):
     return theta
 
 
-def angle_gamma(r_c, r_slc, theta):
+def angle_gamma(r_cvt, r_msl, theta):
     """Claculate blade tilt angle between horizontal and center blade.
 
     The angle is determined so that each streamline in the impeller vane has
     the same length for a given angle between vertical axis and center blade.
 
-    :param r_c (float): curvature radius [m]
-    :param r_slc (float): streamline curvature radius [m]
+    :param r_cvt (float): curvature radius [m]
+    :param r_msl (float): middle streamline curvature radius [m]
     :param theta (float): angle between vertical and middle streamline [rad]
     :return gamma (float): angle between meridional abs. vel. and vert. [rad]
     """
-    l_arc = (r_slc - r_c) * (math.pi / 2 - theta)
+    l_arc = (r_msl - r_cvt) * (math.pi / 2 - theta)
 
-    delta = l_arc / r_c
+    delta = l_arc / r_cvt
 
-    l_height = r_c * math.sin(delta)
+    l_height = r_cvt * math.sin(delta)
 
-    b_half = r_slc - r_c * math.cos(delta)
+    b_half = r_msl - r_cvt * math.cos(delta)
     alpha = math.atan(l_height / b_half)
     if delta < theta:
         gamma = math.pi / 2 - theta - alpha
@@ -563,35 +564,35 @@ def angle_beta(u, c_m, gamma=0, psi_th=0, u_sf=0):
     :param gamma (float): angle between meridional abs. vel. and vert. [rad]
     :param psi_th (float): theoretic head number
     :param u_sf (float): slip factor
-    :return beta (float): angle between rel. and blade velocity vectors [rad]
+    :return beta_b (float): angle between rel. and blade velocity vectors [rad]
     """
-    beta = math.atan(c_m * math.cos(gamma) / (u * (1 - psi_th) - u_sf))
+    beta_b = math.atan(c_m * math.cos(gamma) / (u * (1 - psi_th) - u_sf))
 
-    return beta
+    return beta_b
 
 
-def slip_factor(u, beta_c, z):
+def slip_factor(u, beta_b, z):
     """Calculate slip factor with Wiesner's formula.
 
     :param u (float): absolute velocity [m/s]
-    :param beta_c (float): angle between rel. and blade velocity [m/s]
+    :param beta_b (float): angle between rel. and blade velocity [m/s]
     :param z (int): number of blades
     :return u_sf (float): slip factor [m/s]
     """
-    u_sf = u * (math.sin(beta_c))**0.5 / z**0.7
+    u_sf = u * (math.sin(beta_b))**0.5 / z**0.7
 
     return u_sf
 
 
-def degree_reaction(phi, beta_c, z):
+def degree_reaction(phi, beta_b, z):
     """Calculate degree of reaction.
 
     :param phi (float): flow number
-    :param beta_c (float): angle between rel. and blade velocity [m/s]
+    :param beta_b (float): angle between rel. and blade velocity [m/s]
     :param z (int): number of blades
     :return epsilon_ract (float): degree of reaction
     """
-    epsilon_ract = 1 - (1 - phi / math.tan(beta_c) -
-                        (math.sin(beta_c))**.5 / z**.7) / 2
+    epsilon_ract = 1 - (1 - phi / math.tan(beta_b) -
+                        (math.sin(beta_b))**.5 / z**.7) / 2
 
     return epsilon_ract

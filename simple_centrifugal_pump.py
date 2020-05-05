@@ -34,7 +34,7 @@ class Project(object):
         self.slip = 3  # slip factor for AC motor
         self.hz = 50  # utility frequency for AC motor
         self.tau_adm = 30  # admissible stress for C40 steel [MPa]
-        self.thk = .003  # blade thickness [m]
+        self.t = .003  # blade thickness [m]
         self.lm = .04  # loss coefficient at section 0
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
         self.km = 1.2  # rate between c_1m and c_0 velocity
@@ -178,10 +178,10 @@ class Project(object):
 
         psi = im.head_number(u_2, self.head)
         psi_th = im.theoretic_head_number(psi, eta_hyd)
-        d_sl = im.streamline_diam(d_hu, d_0)
-        r_c = im.curvature_rad(d_2)
-        r_slc = im.streamline_curv_rad(d_hu, d_0, r_c)
-        l_sl = im.streamline_len(r_slc, d_2, d_sl)
+        d_msl = im.streamline_diam(d_hu, d_0)
+        r_cvt = im.curvature_rad(d_2)
+        r_msl = im.streamline_curv_rad(d_hu, d_0, r_cvt)
+        l_msl = im.streamline_len(r_msl, d_2, d_msl)
 
         x_2 = [1]
         u_2sf = 0
@@ -195,15 +195,15 @@ class Project(object):
                                  eta_vol)
             phi_th = im.theoretic_flow_number(phi, x_2[-1], eta_vol)
             c_2m = im.meridional_abs_vel(u_2, phi_th)
-            beta_2 = im.angle_beta(u_2, c_2m, 0, psi_th, u_2sf)
-            u_2sf = im.slip_factor(u_2, beta_2, self.z)
-            x_2.append(im.blade_blockage(beta_2, d_2, self.thk, self.z))
+            beta_2b = im.angle_beta(u_2, c_2m, 0, psi_th, u_2sf)
+            u_2sf = im.slip_factor(u_2, beta_2b, self.z)
+            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, self.z))
             dif = abs(x_2[-1] - x_2[-2])
         x_2 = x_2[-1]
 
-        c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2)
-        w_2 = im.relative_vel(c_2m, beta_2)
-        epsilon_ract = im.degree_reaction(phi, beta_2, self.z)
+        c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
+        w_2 = im.relative_vel(c_2m, beta_2b)
+        epsilon_ract = im.degree_reaction(phi, beta_2b, self.z)
 
         # blade trailing edge
         theta = []
@@ -215,50 +215,50 @@ class Project(object):
             dif = 1
             err = .001
             theta.append(im.angle_theta(n, i))
-            d_isl = im.streamline_diam(d_hu, d_0, theta[-1], r_slc)
-            l_isl = im.streamline_len(r_slc, theta=theta[-1])
-            a_i = im.area(l_isl, l_sl, d_hu, d_0, d_2, b_2, x_2)
-            b.append(im.width(d_isl, a_i))
-            gamma_i = im.angle_gamma(r_c, r_slc, theta[-1])
+            d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
+            l_imsl = im.streamline_len(r_msl, theta=theta[-1])
+            a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2)
+            b.append(im.width(d_imsl, a_i))
+            gamma_i = im.angle_gamma(r_cvt, r_msl, theta[-1])
             if gamma_i is None:
                 x.append(0)
                 continue
-            u_i = im.blade_vel(omega, d_isl)
+            u_i = im.blade_vel(omega, d_imsl)
             while dif > err:
-                phi_i = im.flow_number(d_isl, b[-1], u_i, x_i[-1], self.flow,
+                phi_i = im.flow_number(d_imsl, b[-1], u_i, x_i[-1], self.flow,
                                        eta_vol)
                 phi_ith = im.theoretic_flow_number(phi_i, x_i[-1], eta_vol)
                 c_im = im.meridional_abs_vel(u_i, phi_ith)
-                beta_i = im.angle_beta(u_i, c_im, gamma_i)
-                x_i.append(im.blade_blockage(beta_i, d_isl, self.thk, self.z))
+                beta_ib = im.angle_beta(u_i, c_im, gamma_i)
+                x_i.append(im.blade_blockage(beta_ib, d_imsl, self.t, self.z))
                 dif = abs(x_i[-1] - x_i[-2])
             x.append(x_i[-1])
 
         theta_1 = theta[x.count(0)]
         b_1 = b[x.count(0)]
         x_1 = x[x.count(0)]
-        d_1sl = im.streamline_diam(d_hu, d_0, theta_1, r_slc)
-        gamma_1 = im.angle_gamma(r_c, r_slc, theta_1)
-        u_1 = im.blade_vel(omega, d_1sl)
-        phi_1 = im.flow_number(d_1sl, b_1, u_1, x_1, self.flow, eta_vol)
+        d_1msl = im.streamline_diam(d_hu, d_0, theta_1, r_msl)
+        gamma_1 = im.angle_gamma(r_cvt, r_msl, theta_1)
+        u_1 = im.blade_vel(omega, d_1msl)
+        phi_1 = im.flow_number(d_1msl, b_1, u_1, x_1, self.flow, eta_vol)
         phi_1th = im.theoretic_flow_number(phi_1, x_1, eta_vol)
         c_1m = im.meridional_abs_vel(u_1, phi_1th)
-        beta_1 = im.angle_beta(u_1, c_1m, gamma_1)
-        w_1 = im.relative_vel(c_1m, beta_1)
+        beta_1b = im.angle_beta(u_1, c_1m, gamma_1)
+        w_1 = im.relative_vel(c_1m, beta_1b)
 
         npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
 
         results = {}
         for i in ["part",
                   "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0",
-                  "d_sl", "r_c", "r_slc", "l_sl",
-                  "theta_1", "gamma_1", "beta_1", "b_1", "d_1sl", "x_1",
+                  "d_msl", "r_cvt", "r_msl", "l_msl",
+                  "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
                   "u_1", "c_1m", "w_1",
-                  "theta", "b", "d_2", "u_2", "b_2",  "beta_2",
+                  "theta", "b", "d_2", "u_2", "b_2",  "beta_2b",
                   "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
                   "psi", "psi_th", "phi",  "phi_th", "epsilon_ract",
                   "npsh_req"]:
-            if i in ["beta_2", "theta", "theta_1", "gamma_1", "beta_1"]:
+            if i in ["beta_2b", "theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = calc.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
