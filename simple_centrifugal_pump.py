@@ -319,9 +319,9 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--flowrate", default=.011, type=float, required=True,
+    parser.add_argument("--flowrate", default=.011, type=float,
                         help="flow rate in [m^3/s]")
-    parser.add_argument("--head", default=25, type=float, required=True,
+    parser.add_argument("--head", default=25, type=float,
                         help="head in [m]")
     args = parser.parse_args()
 
