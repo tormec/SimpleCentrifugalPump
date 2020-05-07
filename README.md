@@ -13,4 +13,4 @@ Centrifugal pump parametric design with simple arc blades.
     ```
     python3 simple_centrifugal_pump.py --flowrate FLOWRATE --head HEAD
     ```
-    where `FLOWRATE` and `HEAD` are the respective numeric value.
+    where `FLOWRATE` [m^3/s]  and `HEAD` [m] are the respective numeric value.
