@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Calculation of geometrical dimensions for centrifugal pump."""
 
+import argparse
 import lib.constants as CN
 import lib.calc as cl
 import lib.shaft as sh
@@ -317,4 +318,11 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    main(flow=.011, head=25)  # [m^3/s], [m]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--flowrate", default=.011, type=float, required=True,
+                        help="flow rate in [m^3/s]")
+    parser.add_argument("--head", default=25, type=float, required=True,
+                        help="head in [m]")
+    args = parser.parse_args()
+
+    main(flow=args.flowrate, head=args.head)  # [m^3/s], [m]
