@@ -10,7 +10,7 @@ Centrifugal pump parametric design with simple arc blades.
 
   * clone or download the code
   * run 
-    ```python
+    ```
     python3 simple_centrifugal_pump.py --flowrate FLOWRATE --head HEAD
     ```
     where `FLOWRATE` and `HEAD` are the respective numeric value.
