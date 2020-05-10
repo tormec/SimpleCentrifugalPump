@@ -138,17 +138,12 @@ class Project(object):
 
         return results
 
-    def calc_impeller(self, **kwargs):
-        """Calculate the impeller."""
-        eta_hyd = kwargs["eta_hyd"]
-        eta_vol = kwargs["eta_vol"]
-        phi = kwargs["phi"]
-        u_2 = kwargs["u_2"]
+    def calc_suction_eye(self, **kwargs):
+        """Calculate suction eye of the impeller."""
         omega = kwargs["omega"]
         d_hu = kwargs["d_hu"]
+        eta_vol = kwargs["eta_vol"]
 
-        part = "---impeller---"
-        # suction eye
         x_0 = [1]
         dif = 1
         err = .001
@@ -164,7 +159,22 @@ class Project(object):
             dif = abs(x_0[-1] - x_0[-2])
         x_0 = x_0[-1]
 
-        # blade leading edge
+        results = {}
+        for i in ["d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0"]:
+            results[i] = locals()[i]
+
+        return results
+
+    def calc_blade_leading_edge(self, **kwargs):
+        """Calculate blade leading edge of the impeller."""
+        omega = kwargs["omega"]
+        eta_hyd = kwargs["eta_hyd"]
+        eta_vol = kwargs["eta_vol"]
+        phi = kwargs["phi"]
+        u_2 = kwargs["u_2"]
+        d_hu = kwargs["d_hu"]
+        d_0 = kwargs["d_0"]
+
         u_2 = [u_2]
         dif = 1
         err = .001
@@ -205,7 +215,31 @@ class Project(object):
         w_2 = im.relative_vel(c_2m, beta_2b)
         epsilon_ract = im.degree_reaction(phi, beta_2b, self.z)
 
-        # blade trailing edge
+        results = {}
+        for i in ["d_msl", "r_cvt", "r_msl", "l_msl",
+                  "d_2", "u_2", "b_2",  "beta_2b",
+                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
+                  "psi", "psi_th", "phi",  "epsilon_ract"]:
+            if i == "beta_2b":
+                results[i] = cl.rad2deg(locals()[i])
+            else:
+                results[i] = locals()[i]
+
+        return results
+
+    def calc_blade_trailing_edge(self, **kwargs):
+        """Calculate blade trailing edge of the impeller."""
+        omega = kwargs["omega"]
+        eta_vol = kwargs["eta_vol"]
+        d_hu = kwargs["d_hu"]
+        d_0 = kwargs["d_0"]
+        d_2 = kwargs["d_2"]
+        b_2 = kwargs["b_2"]
+        x_2 = kwargs["x_2"]
+        r_cvt = kwargs["r_cvt"]
+        r_msl = kwargs["r_msl"]
+        l_msl = kwargs["l_msl"]
+
         beta_1b = None
         theta_1 = None
         b_1 = None
@@ -244,18 +278,26 @@ class Project(object):
         npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
 
         results = {}
-        for i in ["part",
-                  "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0",
-                  "d_msl", "r_cvt", "r_msl", "l_msl",
-                  "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
-                  "u_1", "c_1m", "w_1",
-                  "theta", "b", "d_2", "u_2", "b_2",  "beta_2b",
-                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
-                  "psi", "psi_th", "phi",  "epsilon_ract", "npsh_req"]:
-            if i in ["beta_2b", "theta", "theta_1", "gamma_1", "beta_1b"]:
+        for i in ["theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
+                  "u_1", "c_1m", "w_1", "npsh_req"]:
+            if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = cl.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
+
+        return results
+
+    def calc_impeller(self, **kwargs):
+        """Calculate the impeller."""
+        part = {"part": "---impeller---"}
+        suction_eye = self.calc_suction_eye(**kwargs)
+        leading_edge = self.calc_blade_leading_edge(**{**kwargs,
+                                                       **suction_eye})
+        trailing_edge = self.calc_blade_trailing_edge(**{**kwargs,
+                                                         **suction_eye,
+                                                         **leading_edge})
+
+        results = {**part, **suction_eye, **trailing_edge, **leading_edge}
 
         return results
 
