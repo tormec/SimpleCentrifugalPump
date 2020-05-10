@@ -123,33 +123,18 @@ def flow_number_poly(cappa):
     return phi
 
 
-def flow_number(d, b, u, x, flow, eta_vol):
+def flow_number(d, b, u, flow):
     """Calculate flow number.
 
     :param d (float): diameter [m]
     :param b (float): impeller width [m]
     :param u (float): absolute velocity [m/s]
-    :param x (float): blade blockage
     :param flow (float): flow rate [m^3/s]
-    :param eta_vol (float): volumetric efficency
     :return phi (float): flow number
     """
-    phi = flow / (math.pi * d * b * u * x * eta_vol)
+    phi = flow / (math.pi * d * b * u)
 
     return phi
-
-
-def theoretic_flow_number(phi, x, eta_vol):
-    """Calculate theoretic flow number.
-
-    :param phi (float): flow number
-    :param x (float): blade blockage
-    :param eta_vol (float): volumetric efficency
-    :return phi_th (float): theoretic flow number
-    """
-    phi_th = phi / (x * eta_vol)
-
-    return phi_th
 
 
 def head_number_poly(cappa):
@@ -468,14 +453,14 @@ def width(d_imsl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
     return b_i
 
 
-def meridional_abs_vel(u, phi_th):
+def meridional_abs_vel(u, phi):
     """Calculate meridional component of the absolute velocity.
 
-    :param u (float): absolute velocity [m/s]
-    :param phi_th (float): theoretic flow number
+    :param u (float): blade velocity [m/s]
+    :param phi (float): flow number
     :return c_m (float): meridional component of the absolute velocity [m/s]
     """
-    c_m = phi_th * u
+    c_m = phi * u
 
     return c_m
 
@@ -556,19 +541,21 @@ def angle_gamma(r_cvt, r_msl, theta):
     return gamma
 
 
-def angle_beta(u, c_m, gamma=0, psi_th=0, u_sf=0):
-    """Calculate blade built angle between rel. and blade velocity vect.
+def angle_beta(u, phi, eta_vol, x, gamma=0, psi_th=0, u_sf=0):
+    """Return function in blade built angle as variable.
 
     :param u (float): blade velocity [m/s]
-    :param c_m (float): meridional component of the absolute velocity [m/s]
+    :param phi (float): flow number
+    :param eta_vol (float): volumetric efficency
+    :param x (float): blade blockage
     :param gamma (float): angle between meridional abs. vel. and vert. [rad]
     :param psi_th (float): theoretic head number
-    :param u_sf (float): slip factor
-    :return beta_b (float): angle between rel. and blade velocity vectors [rad]
+    :param u_sf (float): slip factor [m/s]
+    :return (function): function in blade built angle as variable
     """
-    beta_b = math.atan(c_m * math.cos(gamma) / (u * (1 - psi_th) - u_sf))
-
-    return beta_b
+    return lambda beta_b: beta_b - math.atan(phi * math.cos(gamma) /
+                                             (x * eta_vol *
+                                             (1 - u_sf / u - psi_th)))
 
 
 def slip_factor(u, beta_b, z):

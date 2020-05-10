@@ -64,3 +64,12 @@ def shaft_diameter(torque, tau_adm, coef=1):
     d_sh = ((16 * coef * torque) / (math.pi * (tau_adm * 10**6)))**(1/3)
 
     return d_sh
+
+
+def hub_diameter(d_sh):
+    """Return function in hub diameter as variable.
+
+    :param d_sh (float): shaft diameter [m]
+    :return (function): function in hub diameter as variable
+    """
+    return lambda d_hu: (d_hu**4 - d_sh**4) / d_hu - d_sh**3
