@@ -147,14 +147,19 @@ class Project(object):
         while dif > err:
             d_0npsh = im.diameter_npsh(omega, x_0[-1], self.flow, self.lm,
                                        self.lw, self.km, eta_vol)
-            d_0 = im.standard_diam(d_0npsh)
-            x_0.append(im.hub_blockage(d_0, d_hu))
+            d_0eff = im.diameter_efficency(omega, x_0[-1], self.flow, self.km,
+                                           eta_vol)
+            d_0flow = im.diameter_flow(omega, x_0[-1], self.flow, eta_vol)
+            d_0avg = im.average_diam(d_0npsh, d_0eff, d_0flow)
+            x_0.append(im.hub_blockage(d_0avg, d_hu))
             dif = abs(x_0[-1] - x_0[-2])
         x_0 = x_0[-1]
 
+        d_0 = im.standard_diam(d_0avg)
+
         results = {}
-        for i in ["part_0",
-                  "d_0npsh", "d_0", "x_0"]:
+        for i in ["part_0", "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "x_0",
+                  "d_0"]:
             results[i] = locals()[i]
 
         return results
@@ -212,8 +217,7 @@ class Project(object):
         epsilon_ract = im.degree_reaction(phi, beta_2b, z)
 
         results = {}
-        for i in ["part_2",
-                  "d_msl", "r_cvt", "r_msl", "l_msl",
+        for i in ["part_2", "d_msl", "r_cvt", "r_msl", "l_msl",
                   "d_2", "u_2", "b_2",  "beta_2b",
                   "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
                   "psi", "psi_th", "phi",  "epsilon_ract"]:
@@ -276,9 +280,8 @@ class Project(object):
         npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
 
         results = {}
-        for i in ["part_1",
-                  "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
-                  "u_1", "c_1m", "w_1", "npsh_req"]:
+        for i in ["part_1", "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl",
+                  "x_1", "u_1", "c_1m", "w_1", "npsh_req"]:
             if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = cl.rad2deg(locals()[i])
             else:
@@ -289,7 +292,7 @@ class Project(object):
     def calc_impeller(self, **kwargs):
         """Calculate the impeller."""
         suction_eye = self.calc_suction_eye(**kwargs)
-        for z in [6, 7, 8]:
+        for z in [6, 7, 8]:  # optimum range of number blades
             leading_edge = self.calc_blade_leading_edge(**{**kwargs,
                                                            **{"z": z},
                                                            **suction_eye})
@@ -357,9 +360,9 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--flowrate", default=.011, type=float,
+    parser.add_argument("--flowrate", default=.005, type=float,
                         help="flow rate in [m^3/s]")
-    parser.add_argument("--head", default=25, type=float,
+    parser.add_argument("--head", default=45, type=float,
                         help="head in [m]")
     args = parser.parse_args()
 

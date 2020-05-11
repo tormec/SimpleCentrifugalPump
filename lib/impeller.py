@@ -261,6 +261,51 @@ def diameter_npsh(omega, x, flow, lm, lw, km, eta_vol):
     return d_npsh
 
 
+def diameter_efficency(omega, x, flow, km, eta_vol):
+    """Calculate diameter favouring max total efficency.
+
+    :param omega (float): angular velocity [rad/s]
+    :param x (float): hub blockage
+    :param flow (float): flow rate [m^3/s]
+    :param km (float): rate between c_1m and c_0 velocity
+    :param eta_vol (float): volumetric efficency
+    :return d_eff (float): diameter with max efficency [m]
+    """
+    d_eff = 2 * ((2 * flow**2 * km**2) /
+                 (eta_vol**2 * math.pi**2 * omega**2 * x**2))**(1/6)
+
+    return d_eff
+
+
+def diameter_flow(omega, x, flow, eta_vol):
+    """Calculate diameter for a given flow rate.
+
+    :param omega (float): angular velocity [rad/s]
+    :param x (float): hub blockage
+    :param flow (float): flow rate [m^3/s]
+    :param eta_vol (float): volumetric efficency
+    :param eta_vol (float): volumetric efficency
+    :return d_flow (float): diameter as function of the flow rate [m]
+    """
+    d_flow = ((flow * 8 * 3.03) / (omega * math.pi * x * eta_vol))**(1/3)
+
+    return d_flow
+
+
+def average_diam(d_npsh, d_eff, d_flow):
+    """Calculate diameter as average value.
+
+    :param d_npsh (float): diameter with min NPSH_r [m]
+    :param d_eff (float): diameter with max efficency [m]
+    :param d_flow (float): diameter as function of the flow rate [m]
+    :return d_avg (float): diameter as average value [m]
+    """
+    d_types = [d_npsh, d_eff, d_flow]
+    d_avg = math.fsum(d_types) / len(d_types)
+
+    return d_avg
+
+
 def standard_diam(d):
     """Calculate diameter according to standard diameters.
 
