@@ -17,33 +17,6 @@ def type_number(omega, flow, head):
     return cappa
 
 
-def cappa2rpm(cappa, flow, head):
-    """Calculate rotational speed for a given typical number.
-
-    :param cappa (float): typical number
-    :param flow (float): flow rate [m^3/s]
-    :param head (float): head [m]
-    :return rpm (float): rotational speed [rpm]
-    """
-    omega = cappa * (CN.G * head)**0.75 / flow**0.5
-    rpm = omega * 60 / (2 * math.pi)
-
-    return rpm
-
-
-def rpm2np(rpm, slip, hz):
-    """Calculate number of poles of an AC motor for a given rotational speed.
-
-    :param rpm (float): rotational speed [rpm]
-    :param slip (int): slip factor [%]
-    :param hz (int): utility frequency [Hz]
-    :return np (int): number of poles
-    """
-    np = round(120 * hz / rpm * (1 - slip / 100))
-
-    return np
-
-
 def rpm2omega(rpm):
     """Calculate angular velocity for a given rotationl speed.
 

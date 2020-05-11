@@ -91,29 +91,26 @@ class Project(object):
         cappa = kwargs["cappa"]
 
         part = "---chosen option---"
-        for k in cappa:
-            if k > .55:
-                # avoid it, because it requires double curvature blades
-                cappa.remove(k)
-        if len(cappa) > 0:
-            cappa = max(cappa)
-        rpm = im.cappa2rpm(cappa, self.flow, self.head)
-        np = im.rpm2np(rpm, self.slip, self.hz)
-        phi = im.flow_number_poly(cappa)
-        psi = im.head_number_poly(cappa)
-        eta = im.efficency_poly(cappa)
+        # avoid cappa over .55 because it requires double curvature blades
+        idx = cappa.index(max([val for val in cappa if val <= .55]))
+        cappa = cappa[idx]
+        np = kwargs["np"][idx]
+        rpm = kwargs["rpm"][idx]
+        phi = kwargs["phi"][idx]
+        psi = kwargs["psi"][idx]
+        eta = kwargs["eta"][idx]
+        u_2 = kwargs["u_2"][idx]
+        d_2 = kwargs["d_2"][idx]
+        b_2 = kwargs["b_2"][idx]
+        bd_2 = kwargs["bd_2"][idx]
+        npsh_req = kwargs["npsh_req"][idx]
         eta_hyd = im.efficency_hyd_poly(cappa)
         eta_vol = im.efficency_vol_poly(cappa)
-        u_2 = im.psi2u(psi, self.head)
-        d_2 = im.diameter_omega(im.rpm2omega(rpm), u_2)
-        b_2 = im.width(d_2, None, u_2, phi, self.flow)
-        bd_2 = im.width0diameter(b_2, d_2)
-        npsh_req = im.cappa2npsh(cappa, self.head)
 
         results = {}
         for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta",
                   "u_2", "d_2", "b_2", "bd_2",
-                  "eta_hyd", "eta_vol", "npsh_req"]:
+                  "npsh_req", "eta_hyd", "eta_vol"]:
             results[i] = locals()[i]
 
         return results
