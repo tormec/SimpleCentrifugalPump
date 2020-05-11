@@ -147,18 +147,14 @@ class Project(object):
         while dif > err:
             d_0npsh = im.diameter_npsh(omega, x_0[-1], self.flow, self.lm,
                                        self.lw, self.km, eta_vol)
-            d_0eff = im.diameter_efficency(omega, x_0[-1], self.flow, self.km,
-                                           eta_vol)
-            d_0flow = im.diameter_flow(omega, x_0[-1], self.flow, eta_vol)
-            d_0avg = im.average_diam(d_0npsh, d_0eff, d_0flow)
-            d_0 = im.standard_diam(d_0avg)
+            d_0 = im.standard_diam(d_0npsh)
             x_0.append(im.hub_blockage(d_0, d_hu))
             dif = abs(x_0[-1] - x_0[-2])
         x_0 = x_0[-1]
 
         results = {}
         for i in ["part_0",
-                  "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0"]:
+                  "d_0npsh", "d_0", "x_0"]:
             results[i] = locals()[i]
 
         return results
