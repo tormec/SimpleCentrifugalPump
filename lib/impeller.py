@@ -33,14 +33,15 @@ def efficency_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta         .600 .750 .800 .890 .910 .920 .928 .929 .930 .929 .928
+    eta         .700 .850 .900 .916 .923 .928 .931 .932 .933 .935 .932
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return eta (float): efficency
     """
-    eta = 0.237 + 2.332 * cappa - 2.569 * cappa**2 + 0.924 * cappa**3
+    coef = [-0.171, 7.400, -19.717, 25.671, -16.239, 3.990]
+    eta = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return eta
 
@@ -50,14 +51,15 @@ def efficency_hyd_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta_hyd     .600 .700 .750 .875 .895 .910 .913 .914 .915 .914 .913
+    eta_hyd     .790 .820 .851 .870 .900 .911 .915 .918 .919 .920 .918
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return eta_hyd (float): hydraulic efficency
     """
-    eta_hyd = 0.268 + 1.989 * cappa - 1.986 * cappa**2 + 0.646 * cappa**3
+    coef = [0.778, -0.224, 2.011, -3.295, 2.162, -0.513]
+    eta_hyd = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return eta_hyd
 
@@ -67,14 +69,15 @@ def efficency_vol_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta_hyd     .910 .940 .950 .953 .955 .958 .960 .963 .965 .968 .970
+    eta_hyd     .940 .948 .953 .956 .957 .958 .959 .960 .961 .962 .963
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return eta_vol (float): volumetric efficency
     """
-    eta_vol = 0.854 + 0.390 * cappa - 0.476 * cappa**2 + 0.195 * cappa**3
+    coef = [0.907, 0.236, -0.433, 0.378, -0.144, 0.016]
+    eta_vol = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return eta_vol
 
@@ -91,7 +94,8 @@ def flow_number_poly(cappa):
     :param cappa (float): typical number
     :return phi (float): flow number
     """
-    phi = 0.0675 + 0.0557 * cappa + 0.0839 * cappa**2 - 0.0490 * cappa**3
+    coef = [0.029, 0.416, -1.090, 1.665, -1.149, 0.288]
+    phi = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return phi
 
@@ -115,14 +119,15 @@ def head_number_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    psi         .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
+    psi         .583 .575 .560 .535 .515 .489 .465 .441 .415 .395 .380
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return psi (float): head number
     """
-    psi = 0.520 + 0.237 * cappa - 0.595 * cappa**2 + 0.251 * cappa**3
+    coef = [0.531, 0.613, -2.339, 3.255, -2.284, 0.641]
+    psi = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return psi
 

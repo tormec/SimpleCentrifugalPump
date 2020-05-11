@@ -39,7 +39,6 @@ class Project(object):
         self.lm = .04  # loss coefficient at section 0
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
         self.km = 1.2  # rate between c_1m and c_0 velocity
-        self.z = 7  # number of blades
 
         options = self.calc_options()
         choice = self.chose_option(**options)
@@ -173,6 +172,7 @@ class Project(object):
         u_2 = kwargs["u_2"]
         d_hu = kwargs["d_hu"]
         d_0 = kwargs["d_0"]
+        z = kwargs["z"]
 
         part_2 = "---impeller blade leading edge---"
         u_2 = [u_2]
@@ -201,9 +201,9 @@ class Project(object):
         while dif > err:
             beta_2b = cl.bisect(im.angle_beta(u_2, phi, eta_vol, x_2[-1], 0,
                                               psi_th, u_2sf),
-                                cl.deg2rad(15), cl.deg2rad(80), .001)
-            u_2sf = im.slip_factor(u_2, beta_2b, self.z)
-            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, self.z))
+                                cl.deg2rad(15), cl.deg2rad(40), .001)
+            u_2sf = im.slip_factor(u_2, beta_2b, z)
+            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
             dif = abs(x_2[-1] - x_2[-2])
         x_2 = x_2[-1]
 
@@ -213,7 +213,7 @@ class Project(object):
         c_2m = im.meridional_abs_vel(u_2, phi)
         c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
         w_2 = im.relative_vel(c_2m, beta_2b)
-        epsilon_ract = im.degree_reaction(phi, beta_2b, self.z)
+        epsilon_ract = im.degree_reaction(phi, beta_2b, z)
 
         results = {}
         for i in ["part_2",
@@ -240,6 +240,7 @@ class Project(object):
         r_cvt = kwargs["r_cvt"]
         r_msl = kwargs["r_msl"]
         l_msl = kwargs["l_msl"]
+        z = kwargs["z"]
 
         part_1 = "---impeller blade trailing edge---"
         beta_1b = None
@@ -269,8 +270,7 @@ class Project(object):
                     beta_1b = cl.bisect(im.angle_beta(u_1, phi_1, eta_vol,
                                                       x_1[-1], gamma_1),
                                         cl.deg2rad(15), cl.deg2rad(40), .001)
-                    x_1.append(im.blade_blockage(beta_1b, d_imsl, self.t,
-                                                 self.z))
+                    x_1.append(im.blade_blockage(beta_1b, d_imsl, self.t, z))
                     dif = abs(x_1[-1] - x_1[-2])
                 x_1 = x_1[-1]
 
@@ -293,13 +293,18 @@ class Project(object):
     def calc_impeller(self, **kwargs):
         """Calculate the impeller."""
         suction_eye = self.calc_suction_eye(**kwargs)
-        leading_edge = self.calc_blade_leading_edge(**{**kwargs,
-                                                       **suction_eye})
-        trailing_edge = self.calc_blade_trailing_edge(**{**kwargs,
-                                                         **suction_eye,
-                                                         **leading_edge})
+        for z in [6, 7, 8]:
+            leading_edge = self.calc_blade_leading_edge(**{**kwargs,
+                                                           **{"z": z},
+                                                           **suction_eye})
+            trailing_edge = self.calc_blade_trailing_edge(**{**kwargs,
+                                                             **{"z": z},
+                                                             **suction_eye,
+                                                             **leading_edge})
+            if leading_edge["beta_2b"] - trailing_edge["beta_1b"] < 8:
+                break
 
-        results = {**suction_eye, **trailing_edge, **leading_edge}
+        results = {**suction_eye, **trailing_edge, **leading_edge, **{"z": z}}
 
         return results
 
