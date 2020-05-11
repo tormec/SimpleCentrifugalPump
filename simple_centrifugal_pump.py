@@ -144,6 +144,7 @@ class Project(object):
         d_hu = kwargs["d_hu"]
         eta_vol = kwargs["eta_vol"]
 
+        part_0 = "---impeller suction eye---"
         x_0 = [1]
         dif = 1
         err = .001
@@ -160,7 +161,8 @@ class Project(object):
         x_0 = x_0[-1]
 
         results = {}
-        for i in ["d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0"]:
+        for i in ["part_0",
+                  "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0"]:
             results[i] = locals()[i]
 
         return results
@@ -175,6 +177,7 @@ class Project(object):
         d_hu = kwargs["d_hu"]
         d_0 = kwargs["d_0"]
 
+        part_2 = "---impeller blade leading edge---"
         u_2 = [u_2]
         dif = 1
         err = .001
@@ -216,7 +219,8 @@ class Project(object):
         epsilon_ract = im.degree_reaction(phi, beta_2b, self.z)
 
         results = {}
-        for i in ["d_msl", "r_cvt", "r_msl", "l_msl",
+        for i in ["part_2",
+                  "d_msl", "r_cvt", "r_msl", "l_msl",
                   "d_2", "u_2", "b_2",  "beta_2b",
                   "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
                   "psi", "psi_th", "phi",  "epsilon_ract"]:
@@ -240,6 +244,7 @@ class Project(object):
         r_msl = kwargs["r_msl"]
         l_msl = kwargs["l_msl"]
 
+        part_1 = "---impeller blade trailing edge---"
         beta_1b = None
         theta_1 = None
         b_1 = None
@@ -278,7 +283,8 @@ class Project(object):
         npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
 
         results = {}
-        for i in ["theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
+        for i in ["part_1",
+                  "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
                   "u_1", "c_1m", "w_1", "npsh_req"]:
             if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = cl.rad2deg(locals()[i])
@@ -289,7 +295,6 @@ class Project(object):
 
     def calc_impeller(self, **kwargs):
         """Calculate the impeller."""
-        part = {"part": "---impeller---"}
         suction_eye = self.calc_suction_eye(**kwargs)
         leading_edge = self.calc_blade_leading_edge(**{**kwargs,
                                                        **suction_eye})
@@ -297,7 +302,7 @@ class Project(object):
                                                          **suction_eye,
                                                          **leading_edge})
 
-        results = {**part, **suction_eye, **trailing_edge, **leading_edge}
+        results = {**suction_eye, **trailing_edge, **leading_edge}
 
         return results
 
