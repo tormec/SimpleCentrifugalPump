@@ -32,6 +32,7 @@ class Project(object):
         self.flow = kwargs["flow"]
         self.head = kwargs["head"]
         # suggested values
+        # TODO: make them default args in the CLI so that they can be changed
         self.slip = 3  # slip factor for AC motor
         self.hz = 50  # utility frequency for AC motor
         self.tau_adm = 30  # admissible stress for C40 steel [MPa]
@@ -39,6 +40,8 @@ class Project(object):
         self.lm = .04  # loss coefficient at section 0
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
         self.km = 1.2  # rate between c_1m and c_0 velocity
+        self.z = [6, 7, 8]  # range number of blades
+        self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]  # min, max angle beta_b
 
         options = self.calc_options()
         choice = self.chose_option(**options)
@@ -134,7 +137,7 @@ class Project(object):
 
         return results
 
-    def calc_suction_eye(self, **kwargs):
+    def suction_eye(self, **kwargs):
         """Calculate suction eye of the impeller."""
         omega = kwargs["omega"]
         d_hu = kwargs["d_hu"]
@@ -164,7 +167,7 @@ class Project(object):
 
         return results
 
-    def calc_blade_leading_edge(self, **kwargs):
+    def blade_leading_edge(self, **kwargs):
         """Calculate blade leading edge of the impeller."""
         omega = kwargs["omega"]
         eta_hyd = kwargs["eta_hyd"]
@@ -202,7 +205,7 @@ class Project(object):
         while dif > err:
             beta_2b = cl.bisect(im.angle_beta(u_2, phi, eta_vol, x_2[-1], 0,
                                               psi_th, u_2sf),
-                                cl.deg2rad(15), cl.deg2rad(40), .001)
+                                self.beta_b[0], self.beta_b[-1], .001)
             u_2sf = im.slip_factor(u_2, beta_2b, z)
             x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
             dif = abs(x_2[-1] - x_2[-2])
@@ -228,7 +231,7 @@ class Project(object):
 
         return results
 
-    def calc_blade_trailing_edge(self, **kwargs):
+    def blade_trailing_edge(self, **kwargs):
         """Calculate blade trailing edge of the impeller."""
         omega = kwargs["omega"]
         eta_vol = kwargs["eta_vol"]
@@ -244,32 +247,33 @@ class Project(object):
 
         part_1 = "---impeller blade trailing edge---"
         beta_1b = None
-        theta_1 = None
-        b_1 = None
         theta = []
         b = []
         n = 16
         for i in range(n):
-            x_1 = [1]
-            dif = 1
-            err = .001
             theta.append(im.angle_theta(n, i))
             d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
             l_imsl = im.streamline_len(r_msl, theta=theta[-1])
             a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2)
             b.append(im.width(d_imsl, a_i))
             if beta_1b is None:
-                gamma_1 = im.angle_gamma(r_cvt, r_msl, theta[-1])
+                if "theta_1" in kwargs:
+                    theta_1 = cl.deg2rad(kwargs["theta_1"])
+                else:
+                    theta_1 = theta[-1]
+                gamma_1 = im.angle_gamma(r_cvt, r_msl, theta_1)
                 if gamma_1 is None:
                     continue
-                theta_1 = theta[-1]
                 b_1 = b[-1]
                 u_1 = im.blade_vel(omega, d_imsl)
                 phi_1 = im.flow_number(d_imsl, b_1, u_1, self.flow)
+                x_1 = [1]
+                dif = 1
+                err = .001
                 while dif > err:
                     beta_1b = cl.bisect(im.angle_beta(u_1, phi_1, eta_vol,
                                                       x_1[-1], gamma_1),
-                                        cl.deg2rad(15), cl.deg2rad(40), .001)
+                                        self.beta_b[0], self.beta_b[-1], .001)
                     x_1.append(im.blade_blockage(beta_1b, d_imsl, self.t, z))
                     dif = abs(x_1[-1] - x_1[-2])
                 x_1 = x_1[-1]
@@ -280,8 +284,8 @@ class Project(object):
         npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
 
         results = {}
-        for i in ["part_1", "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl",
-                  "x_1", "u_1", "c_1m", "w_1", "npsh_req"]:
+        for i in ["part_1", "theta_1", "b_1", "gamma_1", "beta_1b", "d_1msl",
+                  "x_1", "u_1", "c_1m", "w_1", "npsh_req", "theta", "b"]:
             if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = cl.rad2deg(locals()[i])
             else:
@@ -291,19 +295,30 @@ class Project(object):
 
     def calc_impeller(self, **kwargs):
         """Calculate the impeller."""
-        suction_eye = self.calc_suction_eye(**kwargs)
-        for z in [6, 7, 8]:  # optimum range of number blades
-            leading_edge = self.calc_blade_leading_edge(**{**kwargs,
-                                                           **{"z": z},
-                                                           **suction_eye})
-            trailing_edge = self.calc_blade_trailing_edge(**{**kwargs,
-                                                             **{"z": z},
-                                                             **suction_eye,
-                                                             **leading_edge})
-            if leading_edge["beta_2b"] - trailing_edge["beta_1b"] < 8:
-                break
+        suction = self.suction_eye(**kwargs)
 
-        results = {**suction_eye, **trailing_edge, **leading_edge, **{"z": z}}
+        # attempt to reduce dif between beta_b angles changing z
+        # or changing d_1 (through theta_1)
+        for z in self.z:
+            leading = self.blade_leading_edge(**{**kwargs, **{"z": z},
+                                              **suction})
+            trailing = self.blade_trailing_edge(**{**kwargs, **{"z": z},
+                                                **suction, **leading})
+            if abs(leading["beta_2b"] - trailing["beta_1b"]) <= 8:
+                break
+            else:
+                if z == self.z[-1]:
+                    skip = trailing["theta"].index(trailing["theta_1"]) + 1
+                    for t in trailing["theta"][skip:-1]:
+                        trailing = self.blade_trailing_edge(**{**kwargs,
+                                                            **{"z": z},
+                                                            **{"theta_1": t},
+                                                            **suction,
+                                                            **leading})
+                        if abs(leading["beta_2b"] - trailing["beta_1b"]) <= 8:
+                            break
+
+        results = {**suction, **trailing, **leading, **{"z": z}}
 
         return results
 
@@ -360,9 +375,9 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--flowrate", default=.005, type=float,
+    parser.add_argument("--flowrate", default=.011, type=float,
                         help="flow rate in [m^3/s]")
-    parser.add_argument("--head", default=45, type=float,
+    parser.add_argument("--head", default=25, type=float,
                         help="head in [m]")
     args = parser.parse_args()
 
