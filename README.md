@@ -21,7 +21,7 @@ Centrifugal pump parametric design with simple arc blades.
     ```
     python3 scp.py .011 25 --hz=50 --t=.003
     ```
-  * an help, in usage and in the meaning of the arguments, can be obtaind with:
+  * an help, in usage and in the meaning of the input arguments, can be obtaind with:
     ```
     python3 scp.py -h
     ```
