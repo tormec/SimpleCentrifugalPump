@@ -32,6 +32,7 @@ class Project(object):
         self.flow = kwargs["flow"]
         self.head = kwargs["head"]
         # suggested values
+        # TODO: make them default args in the CLI so that they can be changed
         self.slip = 3  # slip factor for AC motor
         self.hz = 50  # utility frequency for AC motor
         self.tau_adm = 30  # admissible stress for C40 steel [MPa]
@@ -39,7 +40,8 @@ class Project(object):
         self.lm = .04  # loss coefficient at section 0
         self.lw = .50  # low-pressure peak coefficient at blades at section 0
         self.km = 1.2  # rate between c_1m and c_0 velocity
-        self.z = 7  # number of blades
+        self.z = [6, 7, 8]  # range number of blades
+        self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]  # min, max angle beta_b
 
         options = self.calc_options()
         choice = self.chose_option(**options)
@@ -91,29 +93,26 @@ class Project(object):
         cappa = kwargs["cappa"]
 
         part = "---chosen option---"
-        for k in cappa:
-            if k > .55:
-                # avoid it, because it requires double curvature blades
-                cappa.remove(k)
-        if len(cappa) > 0:
-            cappa = max(cappa)
-        rpm = im.cappa2rpm(cappa, self.flow, self.head)
-        np = im.rpm2np(rpm, self.slip, self.hz)
-        phi = im.flow_number_poly(cappa)
-        psi = im.head_number_poly(cappa)
-        eta = im.efficency_poly(cappa)
+        # avoid cappa over .55 because it requires double curvature blades
+        idx = cappa.index(max([val for val in cappa if val <= .55]))
+        cappa = cappa[idx]
+        np = kwargs["np"][idx]
+        rpm = kwargs["rpm"][idx]
+        phi = kwargs["phi"][idx]
+        psi = kwargs["psi"][idx]
+        eta = kwargs["eta"][idx]
+        u_2 = kwargs["u_2"][idx]
+        d_2 = kwargs["d_2"][idx]
+        b_2 = kwargs["b_2"][idx]
+        bd_2 = kwargs["bd_2"][idx]
+        npsh_req = kwargs["npsh_req"][idx]
         eta_hyd = im.efficency_hyd_poly(cappa)
         eta_vol = im.efficency_vol_poly(cappa)
-        u_2 = im.psi2u(psi, self.head)
-        d_2 = im.diameter_omega(im.rpm2omega(rpm), u_2)
-        b_2 = im.width(d_2, None, u_2, phi, self.flow)
-        bd_2 = im.width0diameter(b_2, d_2)
-        npsh_req = im.cappa2npsh(cappa, self.head)
 
         results = {}
         for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta",
                   "u_2", "d_2", "b_2", "bd_2",
-                  "eta_hyd", "eta_vol", "npsh_req"]:
+                  "npsh_req", "eta_hyd", "eta_vol"]:
             results[i] = locals()[i]
 
         return results
@@ -129,9 +128,7 @@ class Project(object):
         torque = sh.torque(power, omega)
         d_sh = sh.shaft_diameter(torque, self.tau_adm, coef=2)
         d_sh = round(d_sh, 3)
-        d_hu = cl.bisect(lambda d_hu, d_sh=d_sh:
-                         (d_hu**4 - d_sh**4) / d_hu - d_sh**3,
-                         d_sh - 1, d_sh + 1, .001)
+        d_hu = cl.bisect(sh.hub_diameter(d_sh), d_sh - 1, d_sh + 1, .001)
         d_hu = round(d_hu, 3)
 
         results = {}
@@ -140,17 +137,13 @@ class Project(object):
 
         return results
 
-    def calc_impeller(self, **kwargs):
-        """Calculate the impeller."""
-        eta_hyd = kwargs["eta_hyd"]
-        eta_vol = kwargs["eta_vol"]
-        phi = kwargs["phi"]
-        u_2 = kwargs["u_2"]
+    def suction_eye(self, **kwargs):
+        """Calculate suction eye of the impeller."""
         omega = kwargs["omega"]
         d_hu = kwargs["d_hu"]
+        eta_vol = kwargs["eta_vol"]
 
-        part = "---impeller---"
-        # suction eye
+        part_0 = "---impeller suction eye---"
         x_0 = [1]
         dif = 1
         err = .001
@@ -161,12 +154,31 @@ class Project(object):
                                            eta_vol)
             d_0flow = im.diameter_flow(omega, x_0[-1], self.flow, eta_vol)
             d_0avg = im.average_diam(d_0npsh, d_0eff, d_0flow)
-            d_0 = im.standard_diam(d_0avg)
-            x_0.append(im.hub_blockage(d_0, d_hu))
+            x_0.append(im.hub_blockage(d_0avg, d_hu))
             dif = abs(x_0[-1] - x_0[-2])
         x_0 = x_0[-1]
 
-        # blade leading edge
+        d_0 = im.standard_diam(d_0avg)
+
+        results = {}
+        for i in ["part_0", "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "x_0",
+                  "d_0"]:
+            results[i] = locals()[i]
+
+        return results
+
+    def blade_leading_edge(self, **kwargs):
+        """Calculate blade leading edge of the impeller."""
+        omega = kwargs["omega"]
+        eta_hyd = kwargs["eta_hyd"]
+        eta_vol = kwargs["eta_vol"]
+        phi = kwargs["phi"]
+        u_2 = kwargs["u_2"]
+        d_hu = kwargs["d_hu"]
+        d_0 = kwargs["d_0"]
+        z = kwargs["z"]
+
+        part_2 = "---impeller blade leading edge---"
         u_2 = [u_2]
         dif = 1
         err = .001
@@ -177,6 +189,8 @@ class Project(object):
             dif = abs(u_2[-1] - u_2[-2])
         u_2 = u_2[-1]
 
+        b_2 = im.width(d_2, None, u_2, phi, self.flow)
+        phi = im.flow_number(d_2, b_2, u_2, self.flow)
         psi = im.head_number(u_2, self.head)
         psi_th = im.theoretic_head_number(psi, eta_hyd)
         d_msl = im.streamline_diam(d_hu, d_0)
@@ -189,80 +203,122 @@ class Project(object):
         dif = 1
         err = .001
         while dif > err:
-            b_2 = im.width(d_2, None, u_2, phi, self.flow, x_2[-1],
-                           eta_vol)
-            b_2 = round(b_2, 3)
-            phi = im.flow_number(d_2, b_2, u_2, x_2[-1], self.flow,
-                                 eta_vol)
-            phi_th = im.theoretic_flow_number(phi, x_2[-1], eta_vol)
-            c_2m = im.meridional_abs_vel(u_2, phi_th)
-            beta_2b = im.angle_beta(u_2, c_2m, 0, psi_th, u_2sf)
-            u_2sf = im.slip_factor(u_2, beta_2b, self.z)
-            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, self.z))
+            beta_2b = cl.bisect(im.angle_beta(u_2, phi, eta_vol, x_2[-1], 0,
+                                              psi_th, u_2sf),
+                                self.beta_b[0], self.beta_b[-1], .001)
+            u_2sf = im.slip_factor(u_2, beta_2b, z)
+            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
             dif = abs(x_2[-1] - x_2[-2])
         x_2 = x_2[-1]
 
+        b_2 = im.width(d_2, None, u_2, phi, self.flow, x_2, eta_vol)
+        b_2 = round(b_2, 3)
+        phi = im.flow_number(d_2, b_2, u_2, self.flow)
+        c_2m = im.meridional_abs_vel(u_2, phi)
         c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
         w_2 = im.relative_vel(c_2m, beta_2b)
-        epsilon_ract = im.degree_reaction(phi, beta_2b, self.z)
+        epsilon_ract = im.degree_reaction(phi, beta_2b, z)
 
-        # blade trailing edge
+        results = {}
+        for i in ["part_2", "d_msl", "r_cvt", "r_msl", "l_msl",
+                  "d_2", "u_2", "b_2",  "beta_2b",
+                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
+                  "psi", "psi_th", "phi",  "epsilon_ract"]:
+            if i == "beta_2b":
+                results[i] = cl.rad2deg(locals()[i])
+            else:
+                results[i] = locals()[i]
+
+        return results
+
+    def blade_trailing_edge(self, **kwargs):
+        """Calculate blade trailing edge of the impeller."""
+        omega = kwargs["omega"]
+        eta_vol = kwargs["eta_vol"]
+        d_hu = kwargs["d_hu"]
+        d_0 = kwargs["d_0"]
+        d_2 = kwargs["d_2"]
+        b_2 = kwargs["b_2"]
+        x_2 = kwargs["x_2"]
+        r_cvt = kwargs["r_cvt"]
+        r_msl = kwargs["r_msl"]
+        l_msl = kwargs["l_msl"]
+        z = kwargs["z"]
+
+        part_1 = "---impeller blade trailing edge---"
+        beta_1b = None
         theta = []
         b = []
-        x = []
         n = 16
         for i in range(n):
-            x_i = [1]
-            dif = 1
-            err = .001
             theta.append(im.angle_theta(n, i))
             d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
             l_imsl = im.streamline_len(r_msl, theta=theta[-1])
             a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2)
             b.append(im.width(d_imsl, a_i))
-            gamma_i = im.angle_gamma(r_cvt, r_msl, theta[-1])
-            if gamma_i is None:
-                x.append(0)
-                continue
-            u_i = im.blade_vel(omega, d_imsl)
-            while dif > err:
-                phi_i = im.flow_number(d_imsl, b[-1], u_i, x_i[-1], self.flow,
-                                       eta_vol)
-                phi_ith = im.theoretic_flow_number(phi_i, x_i[-1], eta_vol)
-                c_im = im.meridional_abs_vel(u_i, phi_ith)
-                beta_ib = im.angle_beta(u_i, c_im, gamma_i)
-                x_i.append(im.blade_blockage(beta_ib, d_imsl, self.t, self.z))
-                dif = abs(x_i[-1] - x_i[-2])
-            x.append(x_i[-1])
+            if beta_1b is None:
+                if "theta_1" in kwargs:
+                    theta_1 = cl.deg2rad(kwargs["theta_1"])
+                else:
+                    theta_1 = theta[-1]
+                gamma_1 = im.angle_gamma(r_cvt, r_msl, theta_1)
+                if gamma_1 is None:
+                    continue
+                b_1 = b[-1]
+                u_1 = im.blade_vel(omega, d_imsl)
+                phi_1 = im.flow_number(d_imsl, b_1, u_1, self.flow)
+                x_1 = [1]
+                dif = 1
+                err = .001
+                while dif > err:
+                    beta_1b = cl.bisect(im.angle_beta(u_1, phi_1, eta_vol,
+                                                      x_1[-1], gamma_1),
+                                        self.beta_b[0], self.beta_b[-1], .001)
+                    x_1.append(im.blade_blockage(beta_1b, d_imsl, self.t, z))
+                    dif = abs(x_1[-1] - x_1[-2])
+                x_1 = x_1[-1]
 
-        theta_1 = theta[x.count(0)]
-        b_1 = b[x.count(0)]
-        x_1 = x[x.count(0)]
         d_1msl = im.streamline_diam(d_hu, d_0, theta_1, r_msl)
-        gamma_1 = im.angle_gamma(r_cvt, r_msl, theta_1)
-        u_1 = im.blade_vel(omega, d_1msl)
-        phi_1 = im.flow_number(d_1msl, b_1, u_1, x_1, self.flow, eta_vol)
-        phi_1th = im.theoretic_flow_number(phi_1, x_1, eta_vol)
-        c_1m = im.meridional_abs_vel(u_1, phi_1th)
-        beta_1b = im.angle_beta(u_1, c_1m, gamma_1)
+        c_1m = im.meridional_abs_vel(u_1, phi_1)
         w_1 = im.relative_vel(c_1m, beta_1b)
-
         npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
 
         results = {}
-        for i in ["part",
-                  "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "d_0", "x_0",
-                  "d_msl", "r_cvt", "r_msl", "l_msl",
-                  "theta_1", "gamma_1", "beta_1b", "b_1", "d_1msl", "x_1",
-                  "u_1", "c_1m", "w_1",
-                  "theta", "b", "d_2", "u_2", "b_2",  "beta_2b",
-                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
-                  "psi", "psi_th", "phi",  "phi_th", "epsilon_ract",
-                  "npsh_req"]:
-            if i in ["beta_2b", "theta", "theta_1", "gamma_1", "beta_1b"]:
+        for i in ["part_1", "theta_1", "b_1", "gamma_1", "beta_1b", "d_1msl",
+                  "x_1", "u_1", "c_1m", "w_1", "npsh_req", "theta", "b"]:
+            if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = cl.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
+
+        return results
+
+    def calc_impeller(self, **kwargs):
+        """Calculate the impeller."""
+        suction = self.suction_eye(**kwargs)
+
+        # attempt to reduce dif between beta_b angles changing z
+        # or changing d_1 (through theta_1)
+        for z in self.z:
+            leading = self.blade_leading_edge(**{**kwargs, **{"z": z},
+                                              **suction})
+            trailing = self.blade_trailing_edge(**{**kwargs, **{"z": z},
+                                                **suction, **leading})
+            if abs(leading["beta_2b"] - trailing["beta_1b"]) <= 8:
+                break
+            else:
+                if z == self.z[-1]:
+                    skip = trailing["theta"].index(trailing["theta_1"]) + 1
+                    for t in trailing["theta"][skip:-1]:
+                        trailing = self.blade_trailing_edge(**{**kwargs,
+                                                            **{"z": z},
+                                                            **{"theta_1": t},
+                                                            **suction,
+                                                            **leading})
+                        if abs(leading["beta_2b"] - trailing["beta_1b"]) <= 8:
+                            break
+
+        results = {**suction, **trailing, **leading, **{"z": z}}
 
         return results
 

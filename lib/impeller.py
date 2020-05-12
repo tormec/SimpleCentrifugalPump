@@ -17,33 +17,6 @@ def type_number(omega, flow, head):
     return cappa
 
 
-def cappa2rpm(cappa, flow, head):
-    """Calculate rotational speed for a given typical number.
-
-    :param cappa (float): typical number
-    :param flow (float): flow rate [m^3/s]
-    :param head (float): head [m]
-    :return rpm (float): rotational speed [rpm]
-    """
-    omega = cappa * (CN.G * head)**0.75 / flow**0.5
-    rpm = omega * 60 / (2 * math.pi)
-
-    return rpm
-
-
-def rpm2np(rpm, slip, hz):
-    """Calculate number of poles of an AC motor for a given rotational speed.
-
-    :param rpm (float): rotational speed [rpm]
-    :param slip (int): slip factor [%]
-    :param hz (int): utility frequency [Hz]
-    :return np (int): number of poles
-    """
-    np = round(120 * hz / rpm * (1 - slip / 100))
-
-    return np
-
-
 def rpm2omega(rpm):
     """Calculate angular velocity for a given rotationl speed.
 
@@ -60,14 +33,15 @@ def efficency_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta         .600 .750 .800 .890 .910 .920 .928 .929 .930 .929 .928
+    eta         .700 .850 .900 .916 .923 .928 .931 .932 .933 .935 .932
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return eta (float): efficency
     """
-    eta = 0.237 + 2.332 * cappa - 2.569 * cappa**2 + 0.924 * cappa**3
+    coef = [-0.171, 7.400, -19.717, 25.671, -16.239, 3.990]
+    eta = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return eta
 
@@ -77,14 +51,15 @@ def efficency_hyd_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta_hyd     .600 .700 .750 .875 .895 .910 .913 .914 .915 .914 .913
+    eta_hyd     .790 .820 .851 .870 .900 .911 .915 .918 .919 .920 .918
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return eta_hyd (float): hydraulic efficency
     """
-    eta_hyd = 0.268 + 1.989 * cappa - 1.986 * cappa**2 + 0.646 * cappa**3
+    coef = [0.778, -0.224, 2.011, -3.295, 2.162, -0.513]
+    eta_hyd = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return eta_hyd
 
@@ -94,14 +69,15 @@ def efficency_vol_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    eta_hyd     .910 .940 .950 .953 .955 .958 .960 .963 .965 .968 .970
+    eta_hyd     .940 .948 .953 .956 .957 .958 .959 .960 .961 .962 .963
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return eta_vol (float): volumetric efficency
     """
-    eta_vol = 0.854 + 0.390 * cappa - 0.476 * cappa**2 + 0.195 * cappa**3
+    coef = [0.907, 0.236, -0.433, 0.378, -0.144, 0.016]
+    eta_vol = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return eta_vol
 
@@ -118,38 +94,24 @@ def flow_number_poly(cappa):
     :param cappa (float): typical number
     :return phi (float): flow number
     """
-    phi = 0.0675 + 0.0557 * cappa + 0.0839 * cappa**2 - 0.0490 * cappa**3
+    coef = [0.029, 0.416, -1.090, 1.665, -1.149, 0.288]
+    phi = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return phi
 
 
-def flow_number(d, b, u, x, flow, eta_vol):
+def flow_number(d, b, u, flow):
     """Calculate flow number.
 
     :param d (float): diameter [m]
     :param b (float): impeller width [m]
     :param u (float): absolute velocity [m/s]
-    :param x (float): blade blockage
     :param flow (float): flow rate [m^3/s]
-    :param eta_vol (float): volumetric efficency
     :return phi (float): flow number
     """
-    phi = flow / (math.pi * d * b * u * x * eta_vol)
+    phi = flow / (math.pi * d * b * u)
 
     return phi
-
-
-def theoretic_flow_number(phi, x, eta_vol):
-    """Calculate theoretic flow number.
-
-    :param phi (float): flow number
-    :param x (float): blade blockage
-    :param eta_vol (float): volumetric efficency
-    :return phi_th (float): theoretic flow number
-    """
-    phi_th = phi / (x * eta_vol)
-
-    return phi_th
 
 
 def head_number_poly(cappa):
@@ -157,14 +119,15 @@ def head_number_poly(cappa):
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
-    psi         .55 .54 .53 .52 .51 .49 .45 .43 .41 .40 .38
+    psi         .583 .575 .560 .535 .515 .489 .465 .441 .415 .395 .380
     weights     ones(cappa)
     n           3
 
     :param cappa (float): typical number
     :return psi (float): head number
     """
-    psi = 0.520 + 0.237 * cappa - 0.595 * cappa**2 + 0.251 * cappa**3
+    coef = [0.531, 0.613, -2.339, 3.255, -2.284, 0.641]
+    psi = sum([val * cappa**idx for idx, val in enumerate(coef)])
 
     return psi
 
@@ -468,14 +431,14 @@ def width(d_imsl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
     return b_i
 
 
-def meridional_abs_vel(u, phi_th):
+def meridional_abs_vel(u, phi):
     """Calculate meridional component of the absolute velocity.
 
-    :param u (float): absolute velocity [m/s]
-    :param phi_th (float): theoretic flow number
+    :param u (float): blade velocity [m/s]
+    :param phi (float): flow number
     :return c_m (float): meridional component of the absolute velocity [m/s]
     """
-    c_m = phi_th * u
+    c_m = phi * u
 
     return c_m
 
@@ -556,19 +519,21 @@ def angle_gamma(r_cvt, r_msl, theta):
     return gamma
 
 
-def angle_beta(u, c_m, gamma=0, psi_th=0, u_sf=0):
-    """Calculate blade built angle between rel. and blade velocity vect.
+def angle_beta(u, phi, eta_vol, x, gamma=0, psi_th=0, u_sf=0):
+    """Return function in blade built angle as variable.
 
     :param u (float): blade velocity [m/s]
-    :param c_m (float): meridional component of the absolute velocity [m/s]
+    :param phi (float): flow number
+    :param eta_vol (float): volumetric efficency
+    :param x (float): blade blockage
     :param gamma (float): angle between meridional abs. vel. and vert. [rad]
     :param psi_th (float): theoretic head number
-    :param u_sf (float): slip factor
-    :return beta_b (float): angle between rel. and blade velocity vectors [rad]
+    :param u_sf (float): slip factor [m/s]
+    :return (function): function in blade built angle as variable
     """
-    beta_b = math.atan(c_m * math.cos(gamma) / (u * (1 - psi_th) - u_sf))
-
-    return beta_b
+    return lambda beta_b: beta_b - math.atan(phi * math.cos(gamma) /
+                                             (x * eta_vol *
+                                             (1 - u_sf / u - psi_th)))
 
 
 def slip_factor(u, beta_b, z):
