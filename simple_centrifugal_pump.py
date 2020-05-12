@@ -12,7 +12,7 @@ import lib.volute as vl
 class Project(object):
     """Execute the project of a centrifugal pump."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, flow, head, **kwargs):
         """Take input variables and execute the project.
 
         :param flow (float): flow rate [m^3/s]
@@ -20,8 +20,8 @@ class Project(object):
         :param hz (int): frequency of alternating current [Hz]
         :param t (float): blade thickness [m]
         """
-        self.flow = kwargs["flow"]
-        self.head = kwargs["head"]
+        self.flow = flow
+        self.head = head
         self.hz = kwargs["hz"]
         self.t = kwargs["t"]
         # suggested values
@@ -344,9 +344,9 @@ class Project(object):
         return results
 
 
-def main(**kwargs):
+def main(flow, head, **kwargs):
     """Print results."""
-    prj = Project(**kwargs)
+    prj = Project(flow, head, **kwargs)
 
     for result in prj.results:
         for key, val in result.items():
@@ -365,15 +365,15 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--flowrate", default=.011, type=float,
+    parser.add_argument("flow", type=float, nargs="?", default=.011,
                         help="flow rate in [m^3/s]")
-    parser.add_argument("--head", default=25, type=float,
+    parser.add_argument("head", type=float, nargs="?", default=25,
                         help="head in [m]")
-    parser.add_argument("--hz", default=50, type=int,
+    parser.add_argument("--hz", type=int, default=50,
                         help="frequency of alternating current [Hz]")
-    parser.add_argument("--t", default=.003, type=float,
+    parser.add_argument("--t", type=float, default=.003,
                         help="blade thickness [m]")
 
     args = parser.parse_args()
 
-    main(flow=args.flowrate, head=args.head, hz=args.hz, t=args.t)
+    main(args.flow, args.head, hz=args.hz, t=args.t)
