@@ -446,10 +446,10 @@ def meridional_abs_vel(u, phi):
 def circumferential_abs_vel(u, c_m, beta_b):
     """Calculate circumferential component of the absolute velocity.
 
-    :param u (float): absolute velocity [m/s]
+    :param u (float): blade velocity [m/s]
     :param c_m (float): mmeridional component of the absolute velocity [m/s]
     :param beta_b (float): angle between rel. and blade velocity [m/s]
-    :return c_u (float): circumferential component of the abs. vel. [m/s]
+    :return c_u (float): circumferential component of the blade vel. [m/s]
     """
     c_u = u - c_m / math.tan(beta_b)
 
@@ -501,7 +501,7 @@ def angle_gamma(r_cvt, r_msl, theta):
     :param r_cvt (float): curvature radius [m]
     :param r_msl (float): middle streamline curvature radius [m]
     :param theta (float): angle between vertical and middle streamline [rad]
-    :return gamma (float): angle between meridional abs. vel. and vert. [rad]
+    :return gamma (float): angle between meridional blade vel. and vert. [rad]
     """
     l_arc = (r_msl - r_cvt) * (math.pi / 2 - theta)
 
@@ -526,7 +526,7 @@ def angle_beta(u, phi, eta_vol, x, gamma=0, psi_th=0, u_sf=0):
     :param phi (float): flow number
     :param eta_vol (float): volumetric efficency
     :param x (float): blade blockage
-    :param gamma (float): angle between meridional abs. vel. and vert. [rad]
+    :param gamma (float): angle between meridional blade vel. and vert. [rad]
     :param psi_th (float): theoretic head number
     :param u_sf (float): slip factor [m/s]
     :return (function): function in blade built angle as variable

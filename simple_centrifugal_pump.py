@@ -24,24 +24,22 @@ class Project(object):
         :param lm (float): loss coefficient at section 0
         :param lw (float): low-pressure peak coefficient at blades at section 0
         :param km (float): rate between circumeferential velocity cm2 and c0
-        :param eta_vol (float): volumetric efficency
-        :param eta_hyd (float): idraulic efficency
-        :param z (int): number of blades
-        :param theta_3 (int): start wrap angle [deg]
+        :param z (list): range number of blades allowed
+        :param beta_b (list): min, max angle beta_b allowed [rad]
         """
         self.flow = kwargs["flow"]
         self.head = kwargs["head"]
         # suggested values
         # TODO: make them default args in the CLI so that they can be changed
-        self.slip = 3  # slip factor for AC motor
-        self.hz = 50  # utility frequency for AC motor
-        self.tau_adm = 30  # admissible stress for C40 steel [MPa]
-        self.t = .003  # blade thickness [m]
-        self.lm = .04  # loss coefficient at section 0
-        self.lw = .50  # low-pressure peak coefficient at blades at section 0
-        self.km = 1.2  # rate between c_1m and c_0 velocity
-        self.z = [6, 7, 8]  # range number of blades
-        self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]  # min, max angle beta_b
+        self.slip = 3
+        self.hz = 50
+        self.tau_adm = 30  # C40 steel
+        self.t = .003
+        self.lm = .04
+        self.lw = .50
+        self.km = 1.2
+        self.z = [6, 7, 8]
+        self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]
 
         options = self.calc_options()
         choice = self.chose_option(**options)
