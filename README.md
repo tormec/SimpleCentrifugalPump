@@ -9,8 +9,8 @@ Centrifugal pump parametric design with simple arc blades.
 ## Installation & Use
 
   * clone or download the code
-  * open a terminal in `SimpleCentrifugalPump` and run 
+  * open a terminal in `SimpleCentrifugalPump` and run
     ```
-    python3 simple_centrifugal_pump.py --flowrate FLOWRATE --head HEAD
+    python3 scp.py [flowrate] [head]
     ```
-    where `FLOWRATE` [m^3/s]  and `HEAD` [m] are the respective numeric value.
+    where `[flowrate]` in [m^3/s]  and `[head]` in [m] are the respective numeric value.

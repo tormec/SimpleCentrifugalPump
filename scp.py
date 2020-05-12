@@ -365,7 +365,7 @@ def main(flow, head, **kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("flow", type=float, nargs="?", default=.011,
+    parser.add_argument("flowrate", type=float, nargs="?", default=.011,
                         help="flow rate in [m^3/s]")
     parser.add_argument("head", type=float, nargs="?", default=25,
                         help="head in [m]")
@@ -376,4 +376,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.flow, args.head, hz=args.hz, t=args.t)
+    main(args.flowrate, args.head, hz=args.hz, t=args.t)
