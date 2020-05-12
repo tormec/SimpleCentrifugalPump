@@ -17,29 +17,21 @@ class Project(object):
 
         :param flow (float): flow rate [m^3/s]
         :param head (float) head [m]
-        :param slip (int): slip of electric induction motor [%]
-        :param hz (int):utility frequency [Hz]
-        :param tau_adm (int): tau admissible [MPa]
-        :param thk (float): blade thickness [m]
-        :param lm (float): loss coefficient at section 0
-        :param lw (float): low-pressure peak coefficient at blades at section 0
-        :param km (float): rate between circumeferential velocity cm2 and c0
-        :param z (list): range number of blades allowed
-        :param beta_b (list): min, max angle beta_b allowed [rad]
+        :param hz (int): frequency of alternating current [Hz]
+        :param t (float): blade thickness [m]
         """
         self.flow = kwargs["flow"]
         self.head = kwargs["head"]
+        self.hz = kwargs["hz"]
+        self.t = kwargs["t"]
         # suggested values
-        # TODO: make them default args in the CLI so that they can be changed
-        self.slip = 3
-        self.hz = 50
-        self.tau_adm = 30  # C40 steel
-        self.t = .003
-        self.lm = .04
-        self.lw = .50
-        self.km = 1.2
-        self.z = [6, 7, 8]
-        self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]
+        self.slip = 3  # slip factor for AC motor [%]
+        self.tau_adm = 30  # shearing stress in pump shaft [MPa]
+        self.lm = .04  # loss coefficient at section 0
+        self.lw = .50  # low-pressure peak coefficient at blades at section 0
+        self.km = 1.2  # rate between circumeferential velocity cm2 and c0
+        self.z = [6, 7, 8]  # range number of blades
+        self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]  # min, max beta_b [rad]
 
         options = self.calc_options()
         choice = self.chose_option(**options)
@@ -377,6 +369,11 @@ if __name__ == "__main__":
                         help="flow rate in [m^3/s]")
     parser.add_argument("--head", default=25, type=float,
                         help="head in [m]")
+    parser.add_argument("--hz", default=50, type=int,
+                        help="frequency of alternating current [Hz]")
+    parser.add_argument("--t", default=.003, type=float,
+                        help="blade thickness [m]")
+
     args = parser.parse_args()
 
-    main(flow=args.flowrate, head=args.head)  # [m^3/s], [m]
+    main(flow=args.flowrate, head=args.head, hz=args.hz, t=args.t)
