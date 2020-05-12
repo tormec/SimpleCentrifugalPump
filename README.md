@@ -1,5 +1,5 @@
 # SimpleCentrifugalPump
-Centrifugal pump parametric design with simple arc blades.
+Parametric design of centrifugal pump with single circular arc blade.
 
 ## Requirements
 
