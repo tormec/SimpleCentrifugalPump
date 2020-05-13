@@ -187,6 +187,7 @@ def npsh_req(c, w, lm, lw):
     :param w (float): relative velocity [m/s]
     :param lm (float): loss coefficient
     :param lw (float): low-pressure peak coefficient at blades
+    :return npsh_req (float): neat positive suction head required [m]
     """
     npsh_req = lw * w**2 / (2 * CN.G) + (1 + lm) * c**2 / (2 * CN.G)
 
