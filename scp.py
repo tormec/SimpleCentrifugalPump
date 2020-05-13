@@ -378,8 +378,8 @@ if __name__ == "__main__":
     parser.add_argument("--t", type=float, default=.003,
                         help="blade thickness [m]")
     parser.add_argument("--fnp", type=int, default=argparse.SUPPRESS,
-                        help="force a different solution choosing a \
-                        number of poles of the AC motor among the options")
+                        help="force a different solution choosing a number of \
+                        poles 'np' of the AC motor among the options")
 
     args = parser.parse_args()
 
