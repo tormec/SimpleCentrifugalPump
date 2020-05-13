@@ -11,9 +11,9 @@ Parametric design of centrifugal pump with single circular arc blade.
   * clone or download the code
   * open a terminal in `SimpleCentrifugalPump` and run:
     ```
-    python3 scp.py [flowrate] [head]
+    python3 scp.py [flow] [head]
     ```
-    where `[flowrate]` in `[m^3/s]`  and `[head]` in `[m]` are the respective numeric value, for eg:
+    where `[flow]` in `[m^3/s]`  and `[head]` in `[m]` are the respective numeric value, for eg:
     ```
     python3 scp.py .011 25
     ```
