@@ -34,7 +34,7 @@ class Project(object):
         self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]  # min, max beta_b [rad]
 
         options = self.calc_options()
-        choice = self.chose_option(**options)
+        choice = self.chose_option(**options, **{"fnp": kwargs["fnp"]})
         shaft = self.calc_shaft(**choice)
         impeller = self.calc_impeller(**{**choice, **shaft})
         volute = self.calc_volute(**impeller)
@@ -81,11 +81,15 @@ class Project(object):
     def chose_option(self, **kwargs):
         """Select an option of design according to a criteria."""
         cappa = kwargs["cappa"]
+        np = kwargs["np"]
 
         part = "---chosen option---"
-        # avoid cappa over .55 because it requires double curvature blades
-        idx = cappa.index(max([val for val in cappa if val <= .55]))
-        cappa = cappa[idx]
+        if kwargs["fnp"] is not None and kwargs["fnp"] in np:
+            idx = np.index(kwargs["fnp"])
+        else:
+            # avoid cappa over .55 because it requires double curvature blades
+            idx = cappa.index(max([val for val in cappa if val <= .55]))
+        cappa = kwargs["cappa"][idx]
         np = kwargs["np"][idx]
         rpm = kwargs["rpm"][idx]
         phi = kwargs["phi"][idx]
@@ -373,7 +377,10 @@ if __name__ == "__main__":
                         help="frequency of alternating current [Hz]")
     parser.add_argument("--t", type=float, default=.003,
                         help="blade thickness [m]")
+    parser.add_argument("--fnp", type=int, default=None,
+                        help="force a different solution choosing a \
+                        number of poles of the AC motor among the options")
 
     args = parser.parse_args()
 
-    main(args.flowrate, args.head, hz=args.hz, t=args.t)
+    main(args.flowrate, args.head, hz=args.hz, t=args.t, fnp=args.fnp)
