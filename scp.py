@@ -12,7 +12,7 @@ import lib.volute as vl
 class Project(object):
     """Execute the project of a centrifugal pump."""
 
-    def __init__(self, flow, head, **kwargs):
+    def __init__(self, **kwargs):
         """Take input variables and execute the project.
 
         :param flow (float): flow rate [m^3/s]
@@ -20,8 +20,8 @@ class Project(object):
         :param hz (int): frequency of alternating current [Hz]
         :param t (float): blade thickness [m]
         """
-        self.flow = flow
-        self.head = head
+        self.flow = kwargs["flow"]
+        self.head = kwargs["head"]
         self.hz = kwargs["hz"]
         self.t = kwargs["t"]
         # suggested values
@@ -34,7 +34,7 @@ class Project(object):
         self.beta_b = [cl.deg2rad(15), cl.deg2rad(75)]  # min, max beta_b [rad]
 
         options = self.calc_options()
-        choice = self.chose_option(**options, **{"fnp": kwargs["fnp"]})
+        choice = self.chose_option(**options, **kwargs)
         shaft = self.calc_shaft(**choice)
         impeller = self.calc_impeller(**{**choice, **shaft})
         volute = self.calc_volute(**impeller)
@@ -84,7 +84,7 @@ class Project(object):
         np = kwargs["np"]
 
         part = "---chosen option---"
-        if kwargs["fnp"] is not None and kwargs["fnp"] in np:
+        if "fnp" in kwargs and kwargs["fnp"] in np:
             idx = np.index(kwargs["fnp"])
         else:
             # avoid cappa over .55 because it requires double curvature blades
@@ -348,9 +348,9 @@ class Project(object):
         return results
 
 
-def main(flow, head, **kwargs):
+def main(**kwargs):
     """Print results."""
-    prj = Project(flow, head, **kwargs)
+    prj = Project(**kwargs)
 
     for result in prj.results:
         for key, val in result.items():
@@ -369,7 +369,7 @@ def main(flow, head, **kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("flowrate", type=float, nargs="?", default=.011,
+    parser.add_argument("flow", type=float, nargs="?", default=.011,
                         help="flow rate in [m^3/s]")
     parser.add_argument("head", type=float, nargs="?", default=25,
                         help="head in [m]")
@@ -377,10 +377,10 @@ if __name__ == "__main__":
                         help="frequency of alternating current [Hz]")
     parser.add_argument("--t", type=float, default=.003,
                         help="blade thickness [m]")
-    parser.add_argument("--fnp", type=int, default=None,
+    parser.add_argument("--fnp", type=int, default=argparse.SUPPRESS,
                         help="force a different solution choosing a \
                         number of poles of the AC motor among the options")
 
     args = parser.parse_args()
 
-    main(args.flowrate, args.head, hz=args.hz, t=args.t, fnp=args.fnp)
+    main(**vars(args))
