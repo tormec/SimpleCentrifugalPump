@@ -13,7 +13,7 @@ Parametric design of centrifugal pump with single circular arc blade.
     ```
     python3 scp.py [flow] [head]
     ```
-    where `[flow]` in `[m^3/s]`  and `[head]` in `[m]` are the respective numeric value, for eg:
+    where `[flow]` rate in `[m^3/s]`  and `[head]` in `[m]` are the respective numeric value, for eg:
     ```
     python3 scp.py .011 25
     ```
