@@ -35,7 +35,7 @@ def efficency_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     eta         .700 .850 .900 .916 .923 .928 .931 .932 .933 .935 .932
     weights     ones(cappa)
-    n           3
+    n           5
 
     :param cappa (float): typical number
     :return eta (float): efficency
@@ -53,7 +53,7 @@ def efficency_hyd_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     eta_hyd     .790 .820 .851 .870 .900 .911 .915 .918 .919 .920 .918
     weights     ones(cappa)
-    n           3
+    n           5
 
     :param cappa (float): typical number
     :return eta_hyd (float): hydraulic efficency
@@ -71,7 +71,7 @@ def efficency_vol_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     eta_hyd     .940 .948 .953 .956 .957 .958 .959 .960 .961 .962 .963
     weights     ones(cappa)
-    n           3
+    n           5
 
     :param cappa (float): typical number
     :return eta_vol (float): volumetric efficency
@@ -89,7 +89,7 @@ def flow_number_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     phi         .080 .093 .100 .110 .120 .130 .140 .150 .160 .165 .170
     weights     ones(cappa)
-    n           3
+    n           5
 
     :param cappa (float): typical number
     :return phi (float): flow number
@@ -121,7 +121,7 @@ def head_number_poly(cappa):
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
     psi         .583 .575 .560 .535 .515 .489 .465 .441 .415 .395 .380
     weights     ones(cappa)
-    n           3
+    n           5
 
     :param cappa (float): typical number
     :return psi (float): head number
