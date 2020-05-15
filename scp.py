@@ -67,7 +67,7 @@ class Project(object):
                 eta.append(im.efficency_poly(k))
                 u_2.append(im.psi2u(psi[i], self.head))
                 d_2.append(im.diameter_omega(im.rpm2omega(n), u_2[i]))
-                b_2.append(im.width(d_2[i], None, u_2[i], phi[i], self.flow))
+                b_2.append(im.phi2b(d_2[i], u_2[i], phi[i], self.flow))
                 bd_2.append(im.width0diameter(b_2[i], d_2[i]))
                 npsh_req.append(im.cappa2npsh(k, self.head))
 
@@ -183,10 +183,10 @@ class Project(object):
             dif = abs(u_2[-1] - u_2[-2])
         u_2 = u_2[-1]
 
-        b_2 = im.width(d_2, None, u_2, phi, self.flow)
-        phi = im.flow_number(d_2, b_2, u_2, self.flow)
+        c_2m = im.meridional_abs_vel(u_2, phi)
         psi = im.head_number(u_2, self.head)
         psi_th = im.theoretic_head_number(psi, eta_hyd)
+
         d_msl = im.streamline_diam(d_hu, d_0)
         r_cvt = im.curvature_rad(d_2)
         r_msl = im.streamline_curv_rad(d_hu, d_0, r_cvt)
@@ -200,15 +200,16 @@ class Project(object):
             beta_2b = cl.bisect(im.angle_beta(u_2, phi, eta_vol, x_2[-1], 0,
                                               psi_th, u_2sf),
                                 self.beta_b[0], self.beta_b[-1], .001)
+            b_2 = im.width(d_2, None, c_2m, self.flow, x_2[-1], eta_vol)
+            phi = im.flow_number(d_2, b_2, u_2, self.flow)
             u_2sf = im.slip_factor(u_2, beta_2b, z)
             x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
             dif = abs(x_2[-1] - x_2[-2])
         x_2 = x_2[-1]
 
-        b_2 = im.width(d_2, None, u_2, phi, self.flow, x_2, eta_vol)
-        b_2 = round(b_2, 3)
-        phi = im.flow_number(d_2, b_2, u_2, self.flow)
         c_2m = im.meridional_abs_vel(u_2, phi)
+        b_2 = im.width(d_2, None, c_2m, self.flow, x_2, eta_vol)
+        b_2 = round(b_2, 3)
         c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
         w_2 = im.relative_vel(c_2m, beta_2b)
         epsilon_ract = im.degree_reaction(phi, beta_2b, z)

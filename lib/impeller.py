@@ -114,6 +114,22 @@ def flow_number(d, b, u, flow):
     return phi
 
 
+def phi2b(d, u, phi, flow, x=1, eta_vol=1):
+    """Calculate impeller width for a given flow number.
+
+    :param d (float): diameter [m]
+    :param u (float): blade velocity [m/s]
+    :param phi (float): flow number
+    :param flow (float): flow rate [m^3/s]
+    :param x (float): blade blockage
+    :param eta_vol (float): volumetric efficency
+    :return b (float): impeller width [m]
+    """
+    b = flow / (math.pi * d * u * phi * x * eta_vol)
+
+    return b
+
+
 def head_number_poly(cappa):
     """Calculate head number for a given pump's typical number.
 
@@ -407,29 +423,30 @@ def area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2):
     return a_i
 
 
-def width(d_imsl, a_i=None, u_2=None, phi=None, flow=None, x_2=1, eta_vol=1):
-    """Calculate impeller width at i-section.
+def width(d, a=None, c_m=None, flow=None, x=None, eta_vol=1):
+    """Calculate impeller width.
 
-    width(d_imsl, u_2, phi, flow, x_2, eta_vol):
+    width(d, u, flow, z, t, beta_b):
         width for a given flow rate
-    width(d_imsl, a_i):
+    width(d, a):
         width for a given area
 
-    :param d_imsl (float): middle streamline diameter at i-section [m]
-    :param a_i (flaot): area at i-section [m^2]
-    :param u_2 (float): blade velocity at section 2 [m/s]
-    :param phi (float): flow coefficient
+    :param d (float): diameter [m]
+    :param a (flaot): area [m^2]
+    :param c_m (float): meridional component of the absolute velocity [m/s]
     :param flow (float): flow rate [m^3/s]
-    :param x_2 (float): blade blockage at section 2
+    :param t (float): blade thickness [m]
+    :param z (int): number of blades
+    :param beta_b (float): angle between rel. and blade velocity [m/s]
     :param eta_vol (float): volumetric efficency
-    :return b_i (float): impeller width at i-section [m]
+    :return b (float): impeller width [m]
     """
-    if a_i is None:
-        b_i = flow / (math.pi * d_imsl * u_2 * phi * x_2 * eta_vol)
+    if a is None:
+        b = flow / (math.pi * d * x * c_m * eta_vol)
     else:
-        b_i = a_i / (math.pi * d_imsl)
+        b = a / (math.pi * d)
 
-    return b_i
+    return b
 
 
 def meridional_abs_vel(u, phi):
