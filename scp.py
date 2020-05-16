@@ -162,6 +162,69 @@ class Project(object):
 
         return results
 
+    def blade_trailing_edge(self, **kwargs):
+        """Calculate blade trailing edge of the impeller."""
+        omega = kwargs["omega"]
+        eta_vol = kwargs["eta_vol"]
+        d_hu = kwargs["d_hu"]
+        d_0 = kwargs["d_0"]
+        x_0 = kwargs["x_0"]
+        d_2 = kwargs["d_2"]
+        b_2 = kwargs["b_2"]
+        x_2 = kwargs["x_2"]
+        r_cvt = kwargs["r_cvt"]
+        r_msl = kwargs["r_msl"]
+        l_msl = kwargs["l_msl"]
+        z = kwargs["z"]
+
+        part_1 = "---impeller blade trailing edge---"
+        beta_1b = None
+        theta = []
+        b = []
+        n = 16
+        for i in range(n):
+            theta.append(im.angle_theta(n, i))
+            d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
+            l_imsl = im.streamline_len(r_msl, theta=theta[-1])
+            a_i = im.area(l_imsl, l_msl, d_0, x_0, d_2, b_2, x_2)
+            b.append(im.width(d_imsl, a_i))
+            if beta_1b is None:
+                if "theta_1" in kwargs:
+                    theta_1 = cl.deg2rad(kwargs["theta_1"])
+                else:
+                    theta_1 = theta[-1]
+                gamma_1 = im.angle_gamma(r_cvt, r_msl, theta_1)
+                if gamma_1 is None:
+                    continue
+                b_1 = b[-1]
+                u_1 = im.blade_vel(omega, d_imsl)
+                phi_1 = im.flow_number(d_imsl, b_1, u_1, self.flow)
+                x_1 = [1]
+                dif = 1
+                err = .001
+                while dif > err:
+                    beta_1b = cl.bisect(im.angle_beta(u_1, phi_1, eta_vol,
+                                                      x_1[-1], gamma_1),
+                                        self.beta_b[0], self.beta_b[-1], .001)
+                    x_1.append(im.blade_blockage(beta_1b, d_imsl, self.t, z))
+                    dif = abs(x_1[-1] - x_1[-2])
+                x_1 = x_1[-1]
+
+        d_1msl = im.streamline_diam(d_hu, d_0, theta_1, r_msl)
+        c_1m = im.meridional_abs_vel(u_1, phi_1)
+        w_1 = im.relative_vel(c_1m, beta_1b)
+        npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
+
+        results = {}
+        for i in ["part_1", "theta_1", "b_1", "gamma_1", "beta_1b", "d_1msl",
+                  "x_1", "u_1", "c_1m", "w_1", "npsh_req", "theta", "b"]:
+            if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
+                results[i] = cl.rad2deg(locals()[i])
+            else:
+                results[i] = locals()[i]
+
+        return results
+
     def blade_leading_edge(self, **kwargs):
         """Calculate blade leading edge of the impeller."""
         omega = kwargs["omega"]
@@ -221,67 +284,6 @@ class Project(object):
                   "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
                   "psi", "psi_th", "phi",  "epsilon_ract"]:
             if i == "beta_2b":
-                results[i] = cl.rad2deg(locals()[i])
-            else:
-                results[i] = locals()[i]
-
-        return results
-
-    def blade_trailing_edge(self, **kwargs):
-        """Calculate blade trailing edge of the impeller."""
-        omega = kwargs["omega"]
-        eta_vol = kwargs["eta_vol"]
-        d_hu = kwargs["d_hu"]
-        d_0 = kwargs["d_0"]
-        d_2 = kwargs["d_2"]
-        b_2 = kwargs["b_2"]
-        r_cvt = kwargs["r_cvt"]
-        r_msl = kwargs["r_msl"]
-        l_msl = kwargs["l_msl"]
-        z = kwargs["z"]
-
-        part_1 = "---impeller blade trailing edge---"
-        beta_1b = None
-        theta = []
-        b = []
-        n = 16
-        for i in range(n):
-            theta.append(im.angle_theta(n, i))
-            d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
-            l_imsl = im.streamline_len(r_msl, theta=theta[-1])
-            a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2)
-            b.append(im.width(d_imsl, a_i))
-            if beta_1b is None:
-                if "theta_1" in kwargs:
-                    theta_1 = cl.deg2rad(kwargs["theta_1"])
-                else:
-                    theta_1 = theta[-1]
-                gamma_1 = im.angle_gamma(r_cvt, r_msl, theta_1)
-                if gamma_1 is None:
-                    continue
-                b_1 = b[-1]
-                u_1 = im.blade_vel(omega, d_imsl)
-                phi_1 = im.flow_number(d_imsl, b_1, u_1, self.flow)
-                x_1 = [1]
-                dif = 1
-                err = .001
-                while dif > err:
-                    beta_1b = cl.bisect(im.angle_beta(u_1, phi_1, eta_vol,
-                                                      x_1[-1], gamma_1),
-                                        self.beta_b[0], self.beta_b[-1], .001)
-                    x_1.append(im.blade_blockage(beta_1b, d_imsl, self.t, z))
-                    dif = abs(x_1[-1] - x_1[-2])
-                x_1 = x_1[-1]
-
-        d_1msl = im.streamline_diam(d_hu, d_0, theta_1, r_msl)
-        c_1m = im.meridional_abs_vel(u_1, phi_1)
-        w_1 = im.relative_vel(c_1m, beta_1b)
-        npsh_req = im.npsh_req(c_1m, w_1, self.lm, self.lw)
-
-        results = {}
-        for i in ["part_1", "theta_1", "b_1", "gamma_1", "beta_1b", "d_1msl",
-                  "x_1", "u_1", "c_1m", "w_1", "npsh_req", "theta", "b"]:
-            if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
                 results[i] = cl.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
@@ -369,28 +371,19 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("flow", type=float, nargs="?", default=.011,
-    #                     help="flow rate in [m^3/s]")
-    # parser.add_argument("head", type=float, nargs="?", default=25,
-    #                     help="head in [m]")
-    # parser.add_argument("--hz", type=int, default=50,
-    #                     help="frequency of alternating current [Hz]")
-    # parser.add_argument("--t", type=float, default=.003,
-    #                     help="blade thickness [m]")
-    # parser.add_argument("--fnp", type=int, default=argparse.SUPPRESS,
-    #                     help="force a different solution choosing a number of \
-    #                     poles 'np' of the AC motor among the options")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("flow", type=float, nargs="?", default=.011,
+                        help="flow rate in [m^3/s]")
+    parser.add_argument("head", type=float, nargs="?", default=25,
+                        help="head in [m]")
+    parser.add_argument("--hz", type=int, default=50,
+                        help="frequency of alternating current [Hz]")
+    parser.add_argument("--t", type=float, default=.003,
+                        help="blade thickness [m]")
+    parser.add_argument("--fnp", type=int, default=argparse.SUPPRESS,
+                        help="force a different solution choosing a number of \
+                        poles 'np' of the AC motor among the options")
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    # main(**vars(args))
-
-    flow = [13, 25, 9, 7, 8]
-    head = [40, 30, 33, 60, 15]
-
-    # flow = [12, 33, 5, 11, 42, 20, 4, 15, 50, 5]
-    # head = [50, 30, 45, 25, 42, 70, 10, 70, 50, 15]
-    for f, h in zip(flow, head):
-        print("\n---" + str(f) + "---" + str(h) + "---")
-        main(**{"flow": f / 1000, "head": h, "hz": 50, "t": .003})
+    main(**vars(args))
