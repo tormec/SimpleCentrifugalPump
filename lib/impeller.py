@@ -238,7 +238,7 @@ def streamline_len(r_msl, d_2=None, d_msl=None, theta=None):
     return l_msl
 
 
-def area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2):
+def area(l_imsl, l_msl, d_hu, d_0, d_2, b_2):
     """Calculate impeller vane area at i-section along the middle streamline.
 
     :param l_imsl (float): middle streamline length at i-section [m]
@@ -247,11 +247,10 @@ def area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2):
     :param d_0 (float): diameter at section 0 [m]
     :param d_2 (float): diameter at section 2 [m]
     :param b_2 (list): impeller width at section 2 [m]
-    :param x_2 (float): blade blockage at section 2
     :return a_i (float): area at i-section
     """
     a_0 = (d_0**2 - d_hu**2) * math.pi / 4
-    a_2 = math.pi * d_2 * b_2 * x_2
+    a_2 = math.pi * d_2 * b_2
     a_i = a_0 + (a_2 - a_0) * l_imsl / l_msl
 
     return a_i

@@ -56,7 +56,7 @@ class Project(object):
         bd_2 = []
         npsh_req = []
         for i, p in enumerate(CN.NPOLES):
-            n = sh.rotational_speed(p, self.slip, self.hz)
+            n = op.rotational_speed(p, self.slip, self.hz)
             k = op.type_number(sh.angular_velocity(n), self.flow, self.head)
             # only typical numbers in the domain of centrifugal pumps
             if 0.2 <= k <= 1.2:
@@ -235,7 +235,6 @@ class Project(object):
         d_0 = kwargs["d_0"]
         d_2 = kwargs["d_2"]
         b_2 = kwargs["b_2"]
-        x_2 = kwargs["x_2"]
         r_cvt = kwargs["r_cvt"]
         r_msl = kwargs["r_msl"]
         l_msl = kwargs["l_msl"]
@@ -250,7 +249,7 @@ class Project(object):
             theta.append(im.angle_theta(n, i))
             d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
             l_imsl = im.streamline_len(r_msl, theta=theta[-1])
-            a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2)
+            a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2)
             b.append(im.width(d_imsl, a_i))
             if beta_1b is None:
                 if "theta_1" in kwargs:
@@ -370,19 +369,28 @@ def main(**kwargs):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("flow", type=float, nargs="?", default=.011,
-                        help="flow rate in [m^3/s]")
-    parser.add_argument("head", type=float, nargs="?", default=25,
-                        help="head in [m]")
-    parser.add_argument("--hz", type=int, default=50,
-                        help="frequency of alternating current [Hz]")
-    parser.add_argument("--t", type=float, default=.003,
-                        help="blade thickness [m]")
-    parser.add_argument("--fnp", type=int, default=argparse.SUPPRESS,
-                        help="force a different solution choosing a number of \
-                        poles 'np' of the AC motor among the options")
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("flow", type=float, nargs="?", default=.011,
+    #                     help="flow rate in [m^3/s]")
+    # parser.add_argument("head", type=float, nargs="?", default=25,
+    #                     help="head in [m]")
+    # parser.add_argument("--hz", type=int, default=50,
+    #                     help="frequency of alternating current [Hz]")
+    # parser.add_argument("--t", type=float, default=.003,
+    #                     help="blade thickness [m]")
+    # parser.add_argument("--fnp", type=int, default=argparse.SUPPRESS,
+    #                     help="force a different solution choosing a number of \
+    #                     poles 'np' of the AC motor among the options")
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    main(**vars(args))
+    # main(**vars(args))
+
+    flow = [13, 25, 9, 7, 8]
+    head = [40, 30, 33, 60, 15]
+
+    # flow = [12, 33, 5, 11, 42, 20, 4, 15, 50, 5]
+    # head = [50, 30, 45, 25, 42, 70, 10, 70, 50, 15]
+    for f, h in zip(flow, head):
+        print("\n---" + str(f) + "---" + str(h) + "---")
+        main(**{"flow": f / 1000, "head": h, "hz": 50, "t": .003})
