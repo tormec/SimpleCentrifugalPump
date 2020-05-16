@@ -3,6 +3,7 @@
 
 import argparse
 import lib.constants as CN
+import lib.options as op
 import lib.calc as cl
 import lib.shaft as sh
 import lib.impeller as im
@@ -55,21 +56,21 @@ class Project(object):
         bd_2 = []
         npsh_req = []
         for i, p in enumerate(CN.NPOLES):
-            n = sh.rotational_speed(p, self.slip, self.hz)
-            k = im.type_number(sh.angular_velocity(n), self.flow, self.head)
+            n = op.rotational_speed(p, self.slip, self.hz)
+            k = op.type_number(sh.angular_velocity(n), self.flow, self.head)
             # only typical numbers in the domain of centrifugal pumps
             if 0.2 <= k <= 1.2:
                 np.append(p)
                 rpm.append(n)
                 cappa.append(k)
-                phi.append(im.flow_number_poly(k))
-                psi.append(im.head_number_poly(k))
-                eta.append(im.efficency_poly(k))
-                u_2.append(im.psi2u(psi[i], self.head))
-                d_2.append(im.diameter_omega(im.rpm2omega(n), u_2[i]))
-                b_2.append(im.width(d_2[i], None, u_2[i], phi[i], self.flow))
-                bd_2.append(im.width0diameter(b_2[i], d_2[i]))
-                npsh_req.append(im.cappa2npsh(k, self.head))
+                phi.append(op.flow_number_poly(k))
+                psi.append(op.head_number_poly(k))
+                eta.append(op.efficency_poly(k))
+                u_2.append(op.psi2u(psi[i], self.head))
+                d_2.append(im.diameter_omega(sh.angular_velocity(n), u_2[i]))
+                b_2.append(op.phi2b(d_2[i], u_2[i], phi[i], self.flow))
+                bd_2.append(op.width0diameter(b_2[i], d_2[i]))
+                npsh_req.append(op.cappa2npsh(k, self.head))
 
         results = {}
         for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta", "u_2",
@@ -100,8 +101,8 @@ class Project(object):
         b_2 = kwargs["b_2"][idx]
         bd_2 = kwargs["bd_2"][idx]
         npsh_req = kwargs["npsh_req"][idx]
-        eta_hyd = im.efficency_hyd_poly(cappa)
-        eta_vol = im.efficency_vol_poly(cappa)
+        eta_hyd = op.efficency_hyd_poly(cappa)
+        eta_vol = op.efficency_vol_poly(cappa)
 
         results = {}
         for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta",
@@ -161,76 +162,13 @@ class Project(object):
 
         return results
 
-    def blade_leading_edge(self, **kwargs):
-        """Calculate blade leading edge of the impeller."""
-        omega = kwargs["omega"]
-        eta_hyd = kwargs["eta_hyd"]
-        eta_vol = kwargs["eta_vol"]
-        phi = kwargs["phi"]
-        u_2 = kwargs["u_2"]
-        d_hu = kwargs["d_hu"]
-        d_0 = kwargs["d_0"]
-        z = kwargs["z"]
-
-        part_2 = "---impeller blade leading edge---"
-        u_2 = [u_2]
-        dif = 1
-        err = .001
-        while dif > err:
-            d_2 = im.diameter_omega(omega, u_2[-1])
-            d_2 = round(d_2, 3)
-            u_2.append(im.blade_vel(omega, d_2))
-            dif = abs(u_2[-1] - u_2[-2])
-        u_2 = u_2[-1]
-
-        b_2 = im.width(d_2, None, u_2, phi, self.flow)
-        phi = im.flow_number(d_2, b_2, u_2, self.flow)
-        psi = im.head_number(u_2, self.head)
-        psi_th = im.theoretic_head_number(psi, eta_hyd)
-        d_msl = im.streamline_diam(d_hu, d_0)
-        r_cvt = im.curvature_rad(d_2)
-        r_msl = im.streamline_curv_rad(d_hu, d_0, r_cvt)
-        l_msl = im.streamline_len(r_msl, d_2, d_msl)
-
-        x_2 = [1]
-        u_2sf = 0
-        dif = 1
-        err = .001
-        while dif > err:
-            beta_2b = cl.bisect(im.angle_beta(u_2, phi, eta_vol, x_2[-1], 0,
-                                              psi_th, u_2sf),
-                                self.beta_b[0], self.beta_b[-1], .001)
-            u_2sf = im.slip_factor(u_2, beta_2b, z)
-            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
-            dif = abs(x_2[-1] - x_2[-2])
-        x_2 = x_2[-1]
-
-        b_2 = im.width(d_2, None, u_2, phi, self.flow, x_2, eta_vol)
-        b_2 = round(b_2, 3)
-        phi = im.flow_number(d_2, b_2, u_2, self.flow)
-        c_2m = im.meridional_abs_vel(u_2, phi)
-        c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
-        w_2 = im.relative_vel(c_2m, beta_2b)
-        epsilon_ract = im.degree_reaction(phi, beta_2b, z)
-
-        results = {}
-        for i in ["part_2", "d_msl", "r_cvt", "r_msl", "l_msl",
-                  "d_2", "u_2", "b_2",  "beta_2b",
-                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
-                  "psi", "psi_th", "phi",  "epsilon_ract"]:
-            if i == "beta_2b":
-                results[i] = cl.rad2deg(locals()[i])
-            else:
-                results[i] = locals()[i]
-
-        return results
-
     def blade_trailing_edge(self, **kwargs):
         """Calculate blade trailing edge of the impeller."""
         omega = kwargs["omega"]
         eta_vol = kwargs["eta_vol"]
         d_hu = kwargs["d_hu"]
         d_0 = kwargs["d_0"]
+        x_0 = kwargs["x_0"]
         d_2 = kwargs["d_2"]
         b_2 = kwargs["b_2"]
         x_2 = kwargs["x_2"]
@@ -248,7 +186,7 @@ class Project(object):
             theta.append(im.angle_theta(n, i))
             d_imsl = im.streamline_diam(d_hu, d_0, theta[-1], r_msl)
             l_imsl = im.streamline_len(r_msl, theta=theta[-1])
-            a_i = im.area(l_imsl, l_msl, d_hu, d_0, d_2, b_2, x_2)
+            a_i = im.area(l_imsl, l_msl, d_0, x_0, d_2, b_2, x_2)
             b.append(im.width(d_imsl, a_i))
             if beta_1b is None:
                 if "theta_1" in kwargs:
@@ -281,6 +219,71 @@ class Project(object):
         for i in ["part_1", "theta_1", "b_1", "gamma_1", "beta_1b", "d_1msl",
                   "x_1", "u_1", "c_1m", "w_1", "npsh_req", "theta", "b"]:
             if i in ["theta", "theta_1", "gamma_1", "beta_1b"]:
+                results[i] = cl.rad2deg(locals()[i])
+            else:
+                results[i] = locals()[i]
+
+        return results
+
+    def blade_leading_edge(self, **kwargs):
+        """Calculate blade leading edge of the impeller."""
+        omega = kwargs["omega"]
+        eta_hyd = kwargs["eta_hyd"]
+        eta_vol = kwargs["eta_vol"]
+        phi = kwargs["phi"]
+        u_2 = kwargs["u_2"]
+        d_hu = kwargs["d_hu"]
+        d_0 = kwargs["d_0"]
+        z = kwargs["z"]
+
+        part_2 = "---impeller blade leading edge---"
+        u_2 = [u_2]
+        dif = 1
+        err = .001
+        while dif > err:
+            d_2 = im.diameter_omega(omega, u_2[-1])
+            d_2 = round(d_2, 3)
+            u_2.append(im.blade_vel(omega, d_2))
+            dif = abs(u_2[-1] - u_2[-2])
+        u_2 = u_2[-1]
+
+        c_2m = im.meridional_abs_vel(u_2, phi)
+        psi = im.head_number(u_2, self.head)
+        psi_th = im.theoretic_head_number(psi, eta_hyd)
+
+        d_msl = im.streamline_diam(d_hu, d_0)
+        r_cvt = im.curvature_rad(d_2)
+        r_msl = im.streamline_curv_rad(d_hu, d_0, r_cvt)
+        l_msl = im.streamline_len(r_msl, d_2, d_msl)
+
+        x_2 = [1]
+        u_2sf = 0
+        dif = 1
+        err = .001
+        while dif > err:
+            beta_2b = cl.bisect(im.angle_beta(u_2, phi, eta_vol, x_2[-1], 0,
+                                              psi_th, u_2sf),
+                                self.beta_b[0], self.beta_b[-1], .001)
+            b_2 = im.width(d_2, None, c_2m, self.flow, x_2[-1], eta_vol)
+            phi = im.flow_number(d_2, b_2, u_2, self.flow)
+            u_2sf = im.slip_factor(u_2, beta_2b, z)
+            x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
+            dif = abs(x_2[-1] - x_2[-2])
+        x_2 = x_2[-1]
+
+        c_2m = im.meridional_abs_vel(u_2, phi)
+        b_2 = im.width(d_2, None, c_2m, self.flow, x_2, eta_vol)
+        b_2 = round(b_2, 3)
+        c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
+        w_2 = im.relative_vel(c_2m, beta_2b)
+        epsilon_ract = im.degree_reaction(phi, beta_2b, z)
+
+        results = {}
+        for i in ["part_2", "d_msl", "r_cvt", "r_msl", "l_msl",
+                  "d_2", "u_2", "b_2",  "beta_2b",
+                  "c_2m", "c_2u", "w_2", "u_2sf", "x_2",
+                  "psi", "psi_th", "phi",  "epsilon_ract"]:
+            if i == "beta_2b":
                 results[i] = cl.rad2deg(locals()[i])
             else:
                 results[i] = locals()[i]
