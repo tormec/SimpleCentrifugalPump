@@ -17,6 +17,19 @@ def type_number(omega, flow, head):
     return cappa
 
 
+def rotational_speed(np, slip, hz):
+    """Calculate rotational speed at different number of poles of an AC motor.
+
+    :param np (int): number of poles of an AC motor
+    :param slip (int): slip factor [%]
+    :param hz (int): utility frequency [Hz]
+    :return rpm (float): rotational speed [rpm]
+    """
+    rpm = 120 * hz / np * (1 - slip / 100)
+
+    return rpm
+
+
 def efficency_poly(cappa):
     """Calculate efficency for a given pump's typical number.
 
