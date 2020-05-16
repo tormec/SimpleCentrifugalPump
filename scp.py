@@ -3,6 +3,7 @@
 
 import argparse
 import lib.constants as CN
+import lib.options as op
 import lib.calc as cl
 import lib.shaft as sh
 import lib.impeller as im
@@ -56,20 +57,20 @@ class Project(object):
         npsh_req = []
         for i, p in enumerate(CN.NPOLES):
             n = sh.rotational_speed(p, self.slip, self.hz)
-            k = im.type_number(sh.angular_velocity(n), self.flow, self.head)
+            k = op.type_number(sh.angular_velocity(n), self.flow, self.head)
             # only typical numbers in the domain of centrifugal pumps
             if 0.2 <= k <= 1.2:
                 np.append(p)
                 rpm.append(n)
                 cappa.append(k)
-                phi.append(im.flow_number_poly(k))
-                psi.append(im.head_number_poly(k))
-                eta.append(im.efficency_poly(k))
-                u_2.append(im.psi2u(psi[i], self.head))
-                d_2.append(im.diameter_omega(im.rpm2omega(n), u_2[i]))
-                b_2.append(im.phi2b(d_2[i], u_2[i], phi[i], self.flow))
-                bd_2.append(im.width0diameter(b_2[i], d_2[i]))
-                npsh_req.append(im.cappa2npsh(k, self.head))
+                phi.append(op.flow_number_poly(k))
+                psi.append(op.head_number_poly(k))
+                eta.append(op.efficency_poly(k))
+                u_2.append(op.psi2u(psi[i], self.head))
+                d_2.append(im.diameter_omega(sh.angular_velocity(n), u_2[i]))
+                b_2.append(op.phi2b(d_2[i], u_2[i], phi[i], self.flow))
+                bd_2.append(op.width0diameter(b_2[i], d_2[i]))
+                npsh_req.append(op.cappa2npsh(k, self.head))
 
         results = {}
         for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta", "u_2",
@@ -100,8 +101,8 @@ class Project(object):
         b_2 = kwargs["b_2"][idx]
         bd_2 = kwargs["bd_2"][idx]
         npsh_req = kwargs["npsh_req"][idx]
-        eta_hyd = im.efficency_hyd_poly(cappa)
-        eta_vol = im.efficency_vol_poly(cappa)
+        eta_hyd = op.efficency_hyd_poly(cappa)
+        eta_vol = op.efficency_vol_poly(cappa)
 
         results = {}
         for i in ["part", "np", "rpm", "cappa", "phi", "psi", "eta",
