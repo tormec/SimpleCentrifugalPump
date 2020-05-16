@@ -265,6 +265,7 @@ class Project(object):
                                               psi_th, u_2sf),
                                 self.beta_b[0], self.beta_b[-1], .001)
             b_2 = im.width(d_2, None, c_2m, self.flow, x_2[-1], eta_vol)
+            b_2 = round(b_2, 3)
             phi = im.flow_number(d_2, b_2, u_2, self.flow)
             u_2sf = im.slip_factor(u_2, beta_2b, z)
             x_2.append(im.blade_blockage(beta_2b, d_2, self.t, z))
@@ -272,8 +273,6 @@ class Project(object):
         x_2 = x_2[-1]
 
         c_2m = im.meridional_abs_vel(u_2, phi)
-        b_2 = im.width(d_2, None, c_2m, self.flow, x_2, eta_vol)
-        b_2 = round(b_2, 3)
         c_2u = im.circumferential_abs_vel(u_2, c_2m,  beta_2b)
         w_2 = im.relative_vel(c_2m, beta_2b)
         epsilon_ract = im.degree_reaction(phi, beta_2b, z)
