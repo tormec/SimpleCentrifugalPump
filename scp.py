@@ -151,9 +151,8 @@ class Project(object):
             d_0avg = im.average_diam(d_0npsh, d_0eff, d_0flow)
             x_0.append(im.hub_blockage(d_0avg, d_hu))
             dif = abs(x_0[-1] - x_0[-2])
-        x_0 = x_0[-1]
-
         d_0 = im.standard_diam(d_0avg)
+        x_0 = im.hub_blockage(d_0, d_hu)
 
         results = {}
         for i in ["part_0", "d_0npsh", "d_0eff", "d_0flow", "d_0avg", "x_0",
