@@ -66,10 +66,10 @@ class Project(object):
                 phi.append(op.flow_number_poly(k))
                 psi.append(op.head_number_poly(k))
                 eta.append(op.efficency_poly(k))
-                u_2.append(op.psi2u(psi[i], self.head))
-                d_2.append(im.diameter_omega(sh.angular_velocity(n), u_2[i]))
-                b_2.append(op.phi2b(d_2[i], u_2[i], phi[i], self.flow))
-                bd_2.append(op.width0diameter(b_2[i], d_2[i]))
+                u_2.append(op.psi2u(psi[-1], self.head))
+                d_2.append(im.diameter_omega(sh.angular_velocity(n), u_2[-1]))
+                b_2.append(op.phi2b(d_2[-1], u_2[-1], phi[-1], self.flow))
+                bd_2.append(op.width0diameter(b_2[-1], d_2[-1]))
                 npsh_req.append(op.cappa2npsh(k, self.head))
 
         results = {}
@@ -370,7 +370,7 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("flow", type=float, nargs="?", default=.011,
+    parser.add_argument("flow", type=float, nargs="?", default=.080,
                         help="flow rate in [m^3/s]")
     parser.add_argument("head", type=float, nargs="?", default=25,
                         help="head in [m]")
