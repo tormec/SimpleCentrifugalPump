@@ -370,7 +370,7 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("flow", type=float, nargs="?", default=.080,
+    parser.add_argument("flow", type=float, nargs="?", default=.011,
                         help="flow rate in [m^3/s]")
     parser.add_argument("head", type=float, nargs="?", default=25,
                         help="head in [m]")
