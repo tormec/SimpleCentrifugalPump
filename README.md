@@ -6,7 +6,7 @@ Parametric design of centrifugal pump with single circular arc blade.
   * install the last stable version of `python3`
 
 
-## Installation & Use
+## Installation & Usage
 
   * clone or download the code
   * open a terminal in `SimpleCentrifugalPump` and run:
