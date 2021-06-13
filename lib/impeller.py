@@ -178,7 +178,7 @@ def curvature_rad(d_2):
     :param d_2 (float): diameter at section 2 [m]
     :return r_cvt (float): curvature radius [m]
     """
-    r_cvt = .06 * d_2
+    r_cvt = .18 * d_2
 
     return r_cvt
 
