@@ -58,7 +58,7 @@ class Project(object):
         for i, p in enumerate(CN.NPOLES):
             n = op.rotational_speed(p, self.slip, self.hz)
             k = op.type_number(sh.angular_velocity(n), self.flow, self.head)
-            # only typical numbers in the domain of centrifugal pumps
+            # only specific speeds in the domain of centrifugal pumps
             if 0.2 <= k <= 1.2:
                 np.append(p)
                 rpm.append(n)

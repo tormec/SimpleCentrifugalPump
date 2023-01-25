@@ -5,12 +5,12 @@ import lib.constants as CN
 
 
 def type_number(omega, flow, head):
-    """Calculate centrifugal pump's typical number.
+    """Calculate centrifugal pump's specific speed.
 
     :param omega (float): angular velocity [rad/s]
     :param flow (float): flow rate [m^3/s]
     :param head (float): head [m]
-    :return cappa (float): typical number
+    :return cappa (float): specific speed
     """
     cappa = omega * flow**0.5 / (CN.G * head)**0.75
 
@@ -31,7 +31,7 @@ def rotational_speed(np, slip, hz):
 
 
 def efficency_poly(cappa):
-    """Calculate efficency for a given pump's typical number.
+    """Calculate efficency for a given pump's specific speed.
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -39,7 +39,7 @@ def efficency_poly(cappa):
     weights     ones(cappa)
     n           5
 
-    :param cappa (float): typical number
+    :param cappa (float): specific speed
     :return eta (float): efficency
     """
     coef = [-0.171, 7.400, -19.717, 25.671, -16.239, 3.990]
@@ -49,7 +49,7 @@ def efficency_poly(cappa):
 
 
 def efficency_hyd_poly(cappa):
-    """Calculate hydraulic efficency for a given pump's typical number.
+    """Calculate hydraulic efficency for a given pump's specific speed.
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -57,7 +57,7 @@ def efficency_hyd_poly(cappa):
     weights     ones(cappa)
     n           5
 
-    :param cappa (float): typical number
+    :param cappa (float): specific speed
     :return eta_hyd (float): hydraulic efficency
     """
     coef = [0.778, -0.224, 2.011, -3.295, 2.162, -0.513]
@@ -67,7 +67,7 @@ def efficency_hyd_poly(cappa):
 
 
 def efficency_vol_poly(cappa):
-    """Calculate volumetric efficency for a given pump's typical number.
+    """Calculate volumetric efficency for a given pump's specific speed.
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -75,7 +75,7 @@ def efficency_vol_poly(cappa):
     weights     ones(cappa)
     n           5
 
-    :param cappa (float): typical number
+    :param cappa (float): specific speed
     :return eta_vol (float): volumetric efficency
     """
     coef = [0.907, 0.236, -0.433, 0.378, -0.144, 0.016]
@@ -85,7 +85,7 @@ def efficency_vol_poly(cappa):
 
 
 def flow_number_poly(cappa):
-    """Calculate flow number for a given pump's typical number.
+    """Calculate flow number for a given pump's specific speed.
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -93,7 +93,7 @@ def flow_number_poly(cappa):
     weights     ones(cappa)
     n           5
 
-    :param cappa (float): typical number
+    :param cappa (float): specific speed
     :return phi (float): flow number
     """
     coef = [0.029, 0.416, -1.090, 1.665, -1.149, 0.288]
@@ -103,7 +103,7 @@ def flow_number_poly(cappa):
 
 
 def head_number_poly(cappa):
-    """Calculate head number for a given pump's typical number.
+    """Calculate head number for a given pump's specific speed.
 
     The polynomial has been calculated applaying the curve fitting at nodes
     cappa       .2 .3 .4 .5 .6 .7 .8 .9 1.0 1.1 1.2
@@ -111,7 +111,7 @@ def head_number_poly(cappa):
     weights     ones(cappa)
     n           5
 
-    :param cappa (float): typical number
+    :param cappa (float): specific speed
     :return psi (float): head number
     """
     coef = [0.531, 0.613, -2.339, 3.255, -2.284, 0.641]
@@ -149,9 +149,9 @@ def psi2u(psi, head):
 
 
 def cappa2npsh(cappa, head):
-    """Calculate the npsh required for a given pump's typical number.
+    """Calculate the npsh required for a given pump's specific speed.
 
-    :param cappa (float): typical number
+    :param cappa (float): specific speed
     :param head (float): head [m]
     :return npsh_req (float): neat positive suction head required [m]
     """
