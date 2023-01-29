@@ -4,7 +4,7 @@ import math
 import lib.constants as CN
 
 
-def type_number(omega, flow, head):
+def specific_speed(omega, flow, head):
     """Calculate centrifugal pump's specific speed.
 
     :param omega (float): angular velocity [rad/s]
