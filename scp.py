@@ -355,14 +355,14 @@ def main(**kwargs):
 
     for result in prj.results:
         for key, val in result.items():
-            if type(val) == list:
+            if isinstance(val, list):
                 for k, v in enumerate(val):
-                    if type(v) == tuple:
+                    if isinstance(v, tuple):
                         val[k] = tuple(round(t, 6) for t in v)
                     else:
                         val[k] = round(v, 6)
                 print(key, " ", val)
-            elif type(val) in (float, int):
+            elif isinstance(val, (float, int)):
                 print(key, " ", round(val, 6))
             else:
                 print(val)
